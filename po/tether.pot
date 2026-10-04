@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether 0.2.35\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 14:55-0400\n"
+"POT-Creation-Date: 2026-10-04 15:22-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2329,6 +2329,10 @@ msgid "Select a conversation"
 msgstr ""
 
 #: src/gtk/messages_view.cpp
+msgid "Uploading…"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
 msgstr ""
 
@@ -2342,6 +2346,42 @@ msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "No answer about that message; it may still have been sent."
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Remove"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Pasted image"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "{} is larger than catbox.moe's 200 MB limit."
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Could not save the pasted image."
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Choose files to send"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Images and videos"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "All files"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Could not upload {}: {}"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Uploading {} of {}…"
 msgstr ""
 
 #: src/gtk/messages_view.cpp
@@ -2381,6 +2421,10 @@ msgid "Cancel reply"
 msgstr ""
 
 #: src/gtk/messages_view.cpp
+msgid "Attach images or files"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
 msgstr ""
 
@@ -2390,6 +2434,10 @@ msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "Retry"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Sent as catbox.moe links: anyone with a link can open the file."
 msgstr ""
 
 #: src/gtk/notifications_view.cpp

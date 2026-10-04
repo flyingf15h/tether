@@ -35,18 +35,19 @@
 | **Composer** | Plain text box | Discord-style: "Message @name", an emoji button, and a paper-plane send button that appears once you type. Hover highlights and smoother transitions. |
 | **Reactions** | Not available | React and emoji buttons on each message |
 | **Notifications** | Always on | A switch at the top of the Notifications tab mutes them |
+| **Images and files** | Not available | Paste a screenshot, drag files in, or use the **+** button. They're uploaded to [catbox.moe](https://catbox.moe) when you press send, and the links go out in the message. Anyone with a link can open the file. |
 | **Message history** | Only what arrives after pairing | [`scripts/import-iphone-backup.py`](scripts/import-iphone-backup.py) imports older 1:1 conversations, including your own messages, reactions and replies, from an unencrypted iPhone backup |
 | **Packaging** | Arch, AppImage, Flatpak, Nix | Also a `.deb` built by CI on Ubuntu 24.04 ([deb workflow](.github/workflows/deb.yml)) |
 
 ### Not possible over Bluetooth
 
-iOS only gives a Linux computer plain text messages (MAP) and call audio (HFP). Sending or receiving **images, files and voice messages**, and screen sharing, can't be done over that link, so this fork doesn't add them. Photos and games in imported history show up as placeholders such as `📷 Photo` and `🎮 GamePigeon`.
+iOS only gives a Linux computer plain text messages (MAP) and call audio (HFP). Real attachments can't go over that link, so images and files you send become catbox.moe links (see the table above). **Receiving** images, voice messages and screen sharing still aren't possible. Photos and games in imported history show up as placeholders such as `📷 Photo` and `🎮 GamePigeon`.
 
 ### Known limitations
 
 - Group chats aren't imported from backups, because MAP gives no conversation ID to match them to.
 - Echo cancellation on laptop calls hasn't been tested on real calls yet.
-- Call volume and mute use `pactl`, so they need PipeWire (with `pipewire-pulse`) or PulseAudio. The `.deb` pulls in `pulseaudio-utils`.
+- Call volume and mute use `pactl`, so they need PipeWire (with `pipewire-pulse`) or PulseAudio. The `.deb` pulls in `pulseaudio-utils`, and `curl` for uploads.
 
 ### Installing the fork
 

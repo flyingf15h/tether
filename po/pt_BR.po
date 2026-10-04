@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 14:55-0400\n"
+"POT-Creation-Date: 2026-10-04 15:22-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Brazilian Portuguese\n"
@@ -2575,6 +2575,10 @@ msgid "Select a conversation"
 msgstr "Selecione uma conversa"
 
 #: src/gtk/messages_view.cpp
+msgid "Uploading…"
+msgstr "Enviando arquivo…"
+
+#: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
 msgstr "Informe um destinatário."
 
@@ -2589,6 +2593,42 @@ msgstr "Responder a esta conversa não está disponível."
 #: src/gtk/messages_view.cpp
 msgid "No answer about that message; it may still have been sent."
 msgstr "Sem resposta sobre essa mensagem; ela ainda pode ter sido enviada."
+
+#: src/gtk/messages_view.cpp
+msgid "Remove"
+msgstr "Remover"
+
+#: src/gtk/messages_view.cpp
+msgid "Pasted image"
+msgstr "Imagem colada"
+
+#: src/gtk/messages_view.cpp
+msgid "{} is larger than catbox.moe's 200 MB limit."
+msgstr "{} é maior que o limite de 200 MB do catbox.moe."
+
+#: src/gtk/messages_view.cpp
+msgid "Could not save the pasted image."
+msgstr "Não foi possível salvar a imagem colada."
+
+#: src/gtk/messages_view.cpp
+msgid "Choose files to send"
+msgstr "Escolha arquivos para enviar"
+
+#: src/gtk/messages_view.cpp
+msgid "Images and videos"
+msgstr "Imagens e vídeos"
+
+#: src/gtk/messages_view.cpp
+msgid "All files"
+msgstr "Todos os arquivos"
+
+#: src/gtk/messages_view.cpp
+msgid "Could not upload {}: {}"
+msgstr "Não foi possível enviar {}: {}"
+
+#: src/gtk/messages_view.cpp
+msgid "Uploading {} of {}…"
+msgstr "Enviando {} de {}…"
 
 #: src/gtk/messages_view.cpp
 msgid "Could not reach the Tether daemon; the message was not sent."
@@ -2628,6 +2668,10 @@ msgid "Cancel reply"
 msgstr "Cancelar resposta"
 
 #: src/gtk/messages_view.cpp
+msgid "Attach images or files"
+msgstr "Anexar imagens ou arquivos"
+
+#: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
 msgstr "Emoji (Ctrl+.)"
 
@@ -2638,6 +2682,12 @@ msgstr "Enviar"
 #: src/gtk/messages_view.cpp
 msgid "Retry"
 msgstr "Tentar novamente"
+
+#: src/gtk/messages_view.cpp
+msgid "Sent as catbox.moe links: anyone with a link can open the file."
+msgstr ""
+"Enviado como link do catbox.moe: qualquer pessoa com o link pode abrir o "
+"arquivo."
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"

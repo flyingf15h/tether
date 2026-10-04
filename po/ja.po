@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 14:55-0400\n"
+"POT-Creation-Date: 2026-10-04 15:22-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Japanese\n"
@@ -2548,6 +2548,10 @@ msgid "Select a conversation"
 msgstr "会話を選択"
 
 #: src/gtk/messages_view.cpp
+msgid "Uploading…"
+msgstr "アップロード中…"
+
+#: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
 msgstr "宛先を入力してください。"
 
@@ -2563,6 +2567,42 @@ msgstr "この会話への返信は利用できません。"
 msgid "No answer about that message; it may still have been sent."
 msgstr ""
 "そのメッセージについて応答がありません。送信されている可能性はあります。"
+
+#: src/gtk/messages_view.cpp
+msgid "Remove"
+msgstr "削除"
+
+#: src/gtk/messages_view.cpp
+msgid "Pasted image"
+msgstr "貼り付けた画像"
+
+#: src/gtk/messages_view.cpp
+msgid "{} is larger than catbox.moe's 200 MB limit."
+msgstr "{} は catbox.moe の上限 200 MB を超えています。"
+
+#: src/gtk/messages_view.cpp
+msgid "Could not save the pasted image."
+msgstr "貼り付けた画像を保存できませんでした。"
+
+#: src/gtk/messages_view.cpp
+msgid "Choose files to send"
+msgstr "送信するファイルを選択"
+
+#: src/gtk/messages_view.cpp
+msgid "Images and videos"
+msgstr "画像と動画"
+
+#: src/gtk/messages_view.cpp
+msgid "All files"
+msgstr "すべてのファイル"
+
+#: src/gtk/messages_view.cpp
+msgid "Could not upload {}: {}"
+msgstr "{} をアップロードできませんでした: {}"
+
+#: src/gtk/messages_view.cpp
+msgid "Uploading {} of {}…"
+msgstr "{} / {} をアップロード中…"
 
 #: src/gtk/messages_view.cpp
 msgid "Could not reach the Tether daemon; the message was not sent."
@@ -2602,6 +2642,10 @@ msgid "Cancel reply"
 msgstr "返信をキャンセル"
 
 #: src/gtk/messages_view.cpp
+msgid "Attach images or files"
+msgstr "画像やファイルを添付"
+
+#: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
 msgstr "絵文字 (Ctrl+.)"
 
@@ -2612,6 +2656,12 @@ msgstr "送信"
 #: src/gtk/messages_view.cpp
 msgid "Retry"
 msgstr "再試行"
+
+#: src/gtk/messages_view.cpp
+msgid "Sent as catbox.moe links: anyone with a link can open the file."
+msgstr ""
+"catbox.moe のリンクとして送信されます。リンクを知っている人は誰でもファイルを"
+"開けます。"
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"

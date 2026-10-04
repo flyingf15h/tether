@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 14:55-0400\n"
+"POT-Creation-Date: 2026-10-04 15:22-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Polish\n"
@@ -2579,6 +2579,10 @@ msgid "Select a conversation"
 msgstr "Wybierz rozmowę"
 
 #: src/gtk/messages_view.cpp
+msgid "Uploading…"
+msgstr "Wysyłanie…"
+
+#: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
 msgstr "Podaj odbiorcę."
 
@@ -2594,6 +2598,42 @@ msgstr "Odpowiadanie w tej rozmowie jest niedostępne."
 msgid "No answer about that message; it may still have been sent."
 msgstr ""
 "Brak odpowiedzi w sprawie tej wiadomości; mimo to mogła zostać wysłana."
+
+#: src/gtk/messages_view.cpp
+msgid "Remove"
+msgstr "Usuń"
+
+#: src/gtk/messages_view.cpp
+msgid "Pasted image"
+msgstr "Wklejony obraz"
+
+#: src/gtk/messages_view.cpp
+msgid "{} is larger than catbox.moe's 200 MB limit."
+msgstr "{} przekracza limit 200 MB serwisu catbox.moe."
+
+#: src/gtk/messages_view.cpp
+msgid "Could not save the pasted image."
+msgstr "Nie można zapisać wklejonego obrazu."
+
+#: src/gtk/messages_view.cpp
+msgid "Choose files to send"
+msgstr "Wybierz pliki do wysłania"
+
+#: src/gtk/messages_view.cpp
+msgid "Images and videos"
+msgstr "Obrazy i filmy"
+
+#: src/gtk/messages_view.cpp
+msgid "All files"
+msgstr "Wszystkie pliki"
+
+#: src/gtk/messages_view.cpp
+msgid "Could not upload {}: {}"
+msgstr "Nie można wysłać {}: {}"
+
+#: src/gtk/messages_view.cpp
+msgid "Uploading {} of {}…"
+msgstr "Wysyłanie {} z {}…"
 
 #: src/gtk/messages_view.cpp
 msgid "Could not reach the Tether daemon; the message was not sent."
@@ -2633,6 +2673,10 @@ msgid "Cancel reply"
 msgstr "Anuluj odpowiedź"
 
 #: src/gtk/messages_view.cpp
+msgid "Attach images or files"
+msgstr "Dołącz obrazy lub pliki"
+
+#: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
 msgstr "Emoji (Ctrl+.)"
 
@@ -2643,6 +2687,10 @@ msgstr "Wyślij"
 #: src/gtk/messages_view.cpp
 msgid "Retry"
 msgstr "Ponów"
+
+#: src/gtk/messages_view.cpp
+msgid "Sent as catbox.moe links: anyone with a link can open the file."
+msgstr "Wysyłane jako link catbox.moe: każdy, kto ma link, może otworzyć plik."
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"

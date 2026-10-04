@@ -12,6 +12,7 @@
 #include <cstring>
 #include <ctime>
 #include <gdk/gdkkeysyms.h>
+#include <glib/gstdio.h>
 #include <map>
 #include <set>
 #include <string>
@@ -115,6 +116,15 @@ namespace tether::ui {
             GtkWidget* compose_entry = nullptr;
             std::string compose_requested_key;
             std::string pending_new_thread;
+
+            // Files waiting to go with the next send, shown as chips above the
+            // composer. MAP carries text only, so they are uploaded and sent as links.
+            std::vector<std::string> attachments;
+            // Pasted images written to disk by us, removed once sent or dropped.
+            std::set<std::string> pasted;
+            GtkWidget* attach_bar = nullptr;
+            GtkWidget* attach_chips = nullptr;
+            bool uploading = false;
         };
 
         MessagesState g_messages;
@@ -136,6 +146,7 @@ namespace tether::ui {
         void leave_compose();
         void enter_compose();
         void on_recipient_changed(GtkEditable*, gpointer);
+        void clear_attachments();
 
         gboolean focus_composer_idle(gpointer) {
             g_messages.focus_idle_id = 0;
@@ -179,9 +190,11 @@ namespace tether::ui {
             g_messages.rendered_last_outgoing = false;
             if (g_messages.conversation)
                 clear_list_box(g_messages.conversation);
-                g_messages.reaction_slots.clear();
-                g_messages.reply_counters.clear();
+            g_messages.reaction_slots.clear();
+            g_messages.reply_counters.clear();
             hide_send_error();
+            // Files picked for one person must not go out to the next conversation.
+            clear_attachments();
 
             const auto draft = g_messages.drafts.find(key);
             set_composer_text(draft == g_messages.drafts.end() ? "" : draft->second);
@@ -1002,12 +1015,17 @@ namespace tether::ui {
 
             // The box stays typable whenever the conversation can take a reply;
             // only the button waits for there to be something in it.
-            const bool composer_live = can_send && !g_messages.sending;
+            const bool composer_live = can_send && !g_messages.sending && !g_messages.uploading;
             gtk_widget_set_sensitive(g_messages.composer, composer_live);
-            gtk_widget_set_sensitive(g_messages.send_button, composer_live && !composer_text().empty());
+            const bool has_content = !composer_text().empty() || !g_messages.attachments.empty();
+            gtk_widget_set_sensitive(g_messages.send_button, composer_live && has_content);
+            // Discord's composer: the send plane appears once there is something to send.
+            gtk_widget_set_visible(g_messages.send_button, has_content);
 
             const char* reason = nullptr;
-            if (g_messages.sending)
+            if (g_messages.uploading)
+                reason = _("Uploading…");
+            else if (g_messages.sending)
                 reason = _("Sending…");
             else if (!g_messages.map_open)
                 reason = _("Messages are not connected.");
@@ -1025,7 +1043,7 @@ namespace tether::ui {
             if (g_messages.composer_notice) {
                 // Why the box is shut.
                 const char* notice = nullptr;
-                if (reason && !composer_live && !g_messages.sending)
+                if (reason && !composer_live && !g_messages.sending && !g_messages.uploading)
                     notice = reason;
                 if (notice)
                     set_text(g_messages.composer_notice, notice);
@@ -1074,20 +1092,337 @@ namespace tether::ui {
             return G_SOURCE_REMOVE;
         }
 
+        // catbox.moe: no account, unlisted random URLs, kept until deleted.
+        constexpr const char* UPLOAD_URL = "https://catbox.moe/user/api.php";
+        constexpr goffset UPLOAD_MAX_BYTES = 200LL * 1024 * 1024;
+
+        void forget_pasted(const std::string& path) {
+            if (g_messages.pasted.erase(path))
+                g_remove(path.c_str());
+        }
+
+        void rebuild_attach_bar() {
+            if (!g_messages.attach_bar)
+                return;
+            GList* children = gtk_container_get_children(GTK_CONTAINER(g_messages.attach_chips));
+            for (GList* it = children; it; it = it->next)
+                gtk_widget_destroy(GTK_WIDGET(it->data));
+            g_list_free(children);
+
+            for (const auto& path : g_messages.attachments) {
+                GtkWidget* chip = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+                gtk_style_context_add_class(gtk_widget_get_style_context(chip), "tether-attachment");
+                GtkWidget* overlay = gtk_overlay_new();
+                GdkPixbuf* thumb = gdk_pixbuf_new_from_file_at_scale(path.c_str(), 72, 72, TRUE, nullptr);
+                GtkWidget* picture = thumb ? gtk_image_new_from_pixbuf(thumb)
+                                           : gtk_image_new_from_icon_name("text-x-generic", GTK_ICON_SIZE_DIALOG);
+                if (thumb)
+                    g_object_unref(thumb);
+                gtk_widget_set_size_request(picture, 72, 72);
+                gtk_container_add(GTK_CONTAINER(overlay), picture);
+
+                GtkWidget* remove = gtk_button_new_from_icon_name("window-close-symbolic", GTK_ICON_SIZE_MENU);
+                gtk_widget_set_tooltip_text(remove, _("Remove"));
+                gtk_widget_set_halign(remove, GTK_ALIGN_END);
+                gtk_widget_set_valign(remove, GTK_ALIGN_START);
+                gtk_style_context_add_class(gtk_widget_get_style_context(remove), "tether-attachment-remove");
+                g_object_set_data_full(G_OBJECT(remove), "path", g_strdup(path.c_str()), g_free);
+                g_signal_connect(remove,
+                                 "clicked",
+                                 G_CALLBACK(+[](GtkButton* button, gpointer) {
+                                     if (g_messages.uploading)
+                                         return;
+                                     const std::string path = (const char*)g_object_get_data(G_OBJECT(button), "path");
+                                     auto& list = g_messages.attachments;
+                                     list.erase(std::remove(list.begin(), list.end(), path), list.end());
+                                     forget_pasted(path);
+                                     rebuild_attach_bar();
+                                     update_composer_sensitivity();
+                                 }),
+                                 nullptr);
+                gtk_overlay_add_overlay(GTK_OVERLAY(overlay), remove);
+                gtk_box_pack_start(GTK_BOX(chip), overlay, FALSE, FALSE, 0);
+
+                gchar* base = g_path_get_basename(path.c_str());
+                GtkWidget* name = gtk_label_new(g_messages.pasted.count(path) ? _("Pasted image") : base);
+                g_free(base);
+                gtk_label_set_ellipsize(GTK_LABEL(name), PANGO_ELLIPSIZE_MIDDLE);
+                gtk_label_set_max_width_chars(GTK_LABEL(name), 10);
+                gtk_style_context_add_class(gtk_widget_get_style_context(name), "muted");
+                gtk_box_pack_start(GTK_BOX(chip), name, FALSE, FALSE, 0);
+                gtk_box_pack_start(GTK_BOX(g_messages.attach_chips), chip, FALSE, FALSE, 0);
+            }
+            gtk_widget_show_all(g_messages.attach_chips);
+            gtk_widget_set_visible(g_messages.attach_bar, !g_messages.attachments.empty());
+        }
+
+        void clear_attachments() {
+            // An upload in flight still reads these files; it clears them itself.
+            if (g_messages.uploading || g_messages.attachments.empty())
+                return;
+            for (const auto& path : g_messages.attachments)
+                forget_pasted(path);
+            g_messages.attachments.clear();
+            rebuild_attach_bar();
+        }
+
+        void add_attachment(const std::string& path) {
+            if (path.empty() || g_messages.uploading)
+                return;
+            auto& list = g_messages.attachments;
+            if (std::find(list.begin(), list.end(), path) != list.end())
+                return;
+            GStatBuf st;
+            if (g_stat(path.c_str(), &st) != 0 || !S_ISREG(st.st_mode))
+                return;
+            if (st.st_size > UPLOAD_MAX_BYTES) {
+                gchar* base = g_path_get_basename(path.c_str());
+                set_status_main(tether::tr_format(_("{} is larger than catbox.moe's 200 MB limit."), base));
+                g_free(base);
+                return;
+            }
+            list.push_back(path);
+            rebuild_attach_bar();
+            update_composer_sensitivity();
+            focus_composer_soon();
+        }
+
+        void add_attachment_uris(gchar** uris) {
+            for (gchar** uri = uris; uri && *uri; ++uri) {
+                gchar* path = g_filename_from_uri(*uri, nullptr, nullptr);
+                if (path)
+                    add_attachment(path);
+                g_free(path);
+            }
+        }
+
+        // A screenshot or copied image goes in as a PNG under the runtime dir.
+        bool attach_pixbuf(GdkPixbuf* pixbuf) {
+            const std::string dir = std::string(g_get_user_runtime_dir()) + "/tether-paste";
+            g_mkdir_with_parents(dir.c_str(), 0700);
+            const std::string path = dir + "/pasted-" + std::to_string(g_get_real_time()) + ".png";
+            if (!gdk_pixbuf_save(pixbuf, path.c_str(), "png", nullptr, nullptr)) {
+                set_status_main(_("Could not save the pasted image."));
+                return false;
+            }
+            g_messages.pasted.insert(path);
+            add_attachment(path);
+            return true;
+        }
+
+        // Ctrl+V: an image or copied files become attachments; text pastes as usual.
+        void on_composer_paste(GtkTextView* view, gpointer) {
+            GtkClipboard* clipboard = gtk_widget_get_clipboard(GTK_WIDGET(view), GDK_SELECTION_CLIPBOARD);
+            if (gtk_clipboard_wait_is_uris_available(clipboard)) {
+                gchar** uris = gtk_clipboard_wait_for_uris(clipboard);
+                bool any_file = false;
+                for (gchar** uri = uris; uri && *uri; ++uri)
+                    any_file = any_file || g_str_has_prefix(*uri, "file://");
+                if (any_file) {
+                    g_signal_stop_emission_by_name(view, "paste-clipboard");
+                    add_attachment_uris(uris);
+                    g_strfreev(uris);
+                    return;
+                }
+                g_strfreev(uris);
+            }
+            if (gtk_clipboard_wait_is_image_available(clipboard)) {
+                if (GdkPixbuf* pixbuf = gtk_clipboard_wait_for_image(clipboard)) {
+                    g_signal_stop_emission_by_name(view, "paste-clipboard");
+                    attach_pixbuf(pixbuf);
+                    g_object_unref(pixbuf);
+                }
+            }
+        }
+
+        void on_drop_received(GtkWidget* widget,
+                              GdkDragContext* context,
+                              gint,
+                              gint,
+                              GtkSelectionData* data,
+                              guint,
+                              guint time,
+                              gpointer) {
+            gchar** uris = gtk_selection_data_get_uris(data);
+            if (uris && *uris) {
+                // Not the text view's own handler, which would type the URI in.
+                if (GTK_IS_TEXT_VIEW(widget))
+                    g_signal_stop_emission_by_name(widget, "drag-data-received");
+                add_attachment_uris(uris);
+                gtk_drag_finish(context, TRUE, FALSE, time);
+            } else if (!GTK_IS_TEXT_VIEW(widget)) {
+                if (GdkPixbuf* pixbuf = gtk_selection_data_get_pixbuf(data)) {
+                    attach_pixbuf(pixbuf);
+                    g_object_unref(pixbuf);
+                    gtk_drag_finish(context, TRUE, FALSE, time);
+                } else {
+                    gtk_drag_finish(context, FALSE, FALSE, time);
+                }
+            }
+            g_strfreev(uris);
+        }
+
+        void on_attach_clicked(GtkWidget* button, gpointer) {
+            GtkWidget* toplevel = gtk_widget_get_toplevel(button);
+            GtkFileChooserNative* chooser = gtk_file_chooser_native_new(_("Choose files to send"),
+                                                                        GTK_IS_WINDOW(toplevel) ? GTK_WINDOW(toplevel)
+                                                                                                : nullptr,
+                                                                        GTK_FILE_CHOOSER_ACTION_OPEN,
+                                                                        nullptr,
+                                                                        nullptr);
+            gtk_file_chooser_set_select_multiple(GTK_FILE_CHOOSER(chooser), TRUE);
+            GtkFileFilter* media = gtk_file_filter_new();
+            gtk_file_filter_set_name(media, _("Images and videos"));
+            gtk_file_filter_add_mime_type(media, "image/*");
+            gtk_file_filter_add_mime_type(media, "video/*");
+            gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(chooser), media);
+            GtkFileFilter* all = gtk_file_filter_new();
+            gtk_file_filter_set_name(all, _("All files"));
+            gtk_file_filter_add_pattern(all, "*");
+            gtk_file_chooser_add_filter(GTK_FILE_CHOOSER(chooser), all);
+            if (gtk_native_dialog_run(GTK_NATIVE_DIALOG(chooser)) == GTK_RESPONSE_ACCEPT) {
+                GSList* files = gtk_file_chooser_get_filenames(GTK_FILE_CHOOSER(chooser));
+                for (GSList* it = files; it; it = it->next) {
+                    add_attachment(static_cast<const char*>(it->data));
+                    g_free(it->data);
+                }
+                g_slist_free(files);
+            }
+            g_object_unref(chooser);
+        }
+
+        // One send in progress: files still to upload, links so far, and where it goes.
+        struct UploadJob {
+            std::vector<std::string> pending;
+            std::vector<std::string> sent_files;
+            std::vector<std::string> links;
+            // What was typed, and the same with the reply quote that goes out.
+            std::string typed;
+            std::string text;
+            std::string thread;
+            size_t total = 0;
+        };
+
+        void deliver(const std::string& thread, const std::string& body);
+        void upload_next(UploadJob* job);
+
+        void upload_failed(UploadJob* job, const std::string& reason) {
+            g_messages.uploading = false;
+            delete job;
+            update_composer_sensitivity();
+            set_status_main(reason);
+            show_send_error(reason);
+        }
+
+        void on_upload_done(GObject* source, GAsyncResult* result, gpointer user_data) {
+            auto* job = static_cast<UploadJob*>(user_data);
+            GSubprocess* proc = G_SUBPROCESS(source);
+            gchar* out = nullptr;
+            gchar* err = nullptr;
+            GError* error = nullptr;
+            const bool ran = g_subprocess_communicate_utf8_finish(proc, result, &out, &err, &error);
+            std::string link = out ? g_strstrip(out) : "";
+            std::string detail = error ? error->message : (err && *err ? g_strstrip(err) : link);
+            const bool ok = ran && g_subprocess_get_successful(proc) && g_str_has_prefix(link.c_str(), "https://");
+            g_free(out);
+            g_free(err);
+            g_clear_error(&error);
+            g_object_unref(proc);
+
+            gchar* base = g_path_get_basename(job->pending.front().c_str());
+            const std::string name = base;
+            g_free(base);
+            if (!ok) {
+                if (detail.size() > 160)
+                    detail = detail.substr(0, 160) + "…";
+                upload_failed(job, tether::tr_format(_("Could not upload {}: {}"), name, detail));
+                return;
+            }
+            job->links.push_back(link);
+            job->sent_files.push_back(job->pending.front());
+            job->pending.erase(job->pending.begin());
+            upload_next(job);
+        }
+
+        void upload_next(UploadJob* job) {
+            if (job->pending.empty()) {
+                // Links on their own lines after the text, so the phone can preview each one.
+                std::string body = job->text;
+                std::string typed = job->typed;
+                for (const auto& link : job->links) {
+                    body += (body.empty() ? "" : "\n") + link;
+                    typed += (typed.empty() ? "" : "\n") + link;
+                }
+                const std::string thread = job->thread;
+                // The links take the files' place in the box, so a failed send
+                // is retried without uploading again.
+                if (g_messages.selected_thread == thread)
+                    set_composer_text(typed);
+                else
+                    g_messages.drafts[thread] = typed;
+                for (const auto& file : job->sent_files) {
+                    auto& list = g_messages.attachments;
+                    list.erase(std::remove(list.begin(), list.end(), file), list.end());
+                    forget_pasted(file);
+                }
+                delete job;
+                g_messages.uploading = false;
+                rebuild_attach_bar();
+                deliver(thread, body);
+                return;
+            }
+            const std::string& path = job->pending.front();
+            set_status_main(tether::tr_format(_("Uploading {} of {}…"), job->total - job->pending.size() + 1, job->total));
+            // curl's -F reads ; and , as field options, so the name is quoted.
+            std::string quoted;
+            for (char c : path) {
+                if (c == '"' || c == '\\')
+                    quoted += '\\';
+                quoted += c;
+            }
+            const std::string field = "fileToUpload=@\"" + quoted + "\"";
+            const gchar* argv[] = {"curl", "-sS", "--fail-with-body", "--max-time", "300", "-F", "reqtype=fileupload",
+                                   "-F", field.c_str(), UPLOAD_URL, nullptr};
+            GError* error = nullptr;
+            GSubprocess* proc = g_subprocess_newv(
+                argv, GSubprocessFlags(G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE), &error);
+            if (!proc) {
+                const std::string reason = tether::tr_format(_("Could not upload {}: {}"), path, error->message);
+                g_clear_error(&error);
+                upload_failed(job, reason);
+                return;
+            }
+            g_subprocess_communicate_utf8_async(proc, nullptr, nullptr, on_upload_done, job);
+        }
+
         void on_send_clicked(GtkWidget*, gpointer) {
-            std::string body = composer_text();
-            if (body.empty() || g_messages.selected_thread.empty())
+            const std::string typed = composer_text();
+            std::string body = typed;
+            if ((body.empty() && g_messages.attachments.empty()) || g_messages.selected_thread.empty() ||
+                g_messages.uploading)
                 return;
             // MAP has no threaded replies, so the quote travels in the text,
             // and parse_reply turns it back into a quote on this side.
             if (!g_messages.reply_to.empty())
                 body = REPLY_MARK + std::string(OPEN_QUOTE) + snippet(g_messages.reply_to, 60) + CLOSE_QUOTE + "\n" + body;
 
+            hide_send_error();
+            if (!g_messages.attachments.empty()) {
+                auto* job = new UploadJob{g_messages.attachments, {}, {}, typed, body, g_messages.selected_thread, 0};
+                job->total = job->pending.size();
+                g_messages.uploading = true;
+                update_composer_sensitivity();
+                upload_next(job);
+                return;
+            }
+            deliver(g_messages.selected_thread, body);
+        }
+
+        void deliver(const std::string& thread, const std::string& body) {
             nlohmann::json j;
             j["command"] = "bt_send_message";
-            j["thread"] = g_messages.selected_thread;
+            j["thread"] = thread;
             j["body"] = body;
-            hide_send_error();
             if (!daemon_send(j)) {
                 const char* reason = _("Could not reach the Tether daemon; the message was not sent.");
                 set_status_main(reason);
@@ -1614,9 +1949,18 @@ namespace tether::ui {
         gtk_overlay_add_overlay(GTK_OVERLAY(composer_overlay), g_messages.composer_placeholder);
         gtk_overlay_set_overlay_pass_through(GTK_OVERLAY(composer_overlay), g_messages.composer_placeholder, TRUE);
 
-        // The pill: text, then emoji, then send, all inside one rounded field.
+        // The pill, as in Discord: attach, text, emoji, then send, inside one rounded field.
         GtkWidget* pill = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
         gtk_style_context_add_class(gtk_widget_get_style_context(pill), "tether-composer");
+
+        GtkWidget* attach = gtk_button_new_from_icon_name("list-add-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_button_set_relief(GTK_BUTTON(attach), GTK_RELIEF_NONE);
+        gtk_widget_set_valign(attach, GTK_ALIGN_END);
+        gtk_widget_set_tooltip_text(attach, _("Attach images or files"));
+        set_accessible_name(attach, _("Attach images or files"));
+        gtk_style_context_add_class(gtk_widget_get_style_context(attach), "tether-composer-button");
+        g_signal_connect(attach, "clicked", G_CALLBACK(on_attach_clicked), nullptr);
+        gtk_box_pack_start(GTK_BOX(pill), attach, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(pill), composer_overlay, TRUE, TRUE, 0);
 
         GtkWidget* emoji = gtk_button_new_from_icon_name("face-smile-symbolic", GTK_ICON_SIZE_BUTTON);
@@ -1645,6 +1989,14 @@ namespace tether::ui {
 
         g_signal_connect(g_messages.send_button, "clicked", G_CALLBACK(on_send_clicked), nullptr);
         g_signal_connect(g_messages.composer, "key-press-event", G_CALLBACK(on_composer_key), nullptr);
+        g_signal_connect(g_messages.composer, "paste-clipboard", G_CALLBACK(on_composer_paste), nullptr);
+        // Files dropped anywhere on the conversation, or on the box itself, are attached.
+        gtk_target_list_add_uri_targets(gtk_drag_dest_get_target_list(g_messages.composer), 0);
+        g_signal_connect(g_messages.composer, "drag-data-received", G_CALLBACK(on_drop_received), nullptr);
+        gtk_drag_dest_set(conversation_box, GTK_DEST_DEFAULT_ALL, nullptr, 0, GDK_ACTION_COPY);
+        gtk_drag_dest_add_uri_targets(conversation_box);
+        gtk_drag_dest_add_image_targets(conversation_box);
+        g_signal_connect(conversation_box, "drag-data-received", G_CALLBACK(on_drop_received), nullptr);
         // The button follows what is actually in the box, so "Send" is never
         // offered for an empty message. Editing also retires a failure notice
         // that no longer describes what is in the box.
@@ -1655,8 +2007,6 @@ namespace tether::ui {
                              update_composer_sensitivity();
                              const bool empty = gtk_text_buffer_get_char_count(buffer) == 0;
                              gtk_widget_set_visible(g_messages.composer_placeholder, empty);
-                             // Discord's composer: the send plane appears once there is something to send.
-                             gtk_widget_set_visible(g_messages.send_button, !empty);
                          }),
                          nullptr);
         // Enabled only once MAP is up and a conversation is open.
@@ -1696,7 +2046,30 @@ namespace tether::ui {
         gtk_widget_set_margin_end(g_messages.composer_notice, 8);
         gtk_box_pack_start(GTK_BOX(conversation_box), g_messages.composer_notice, FALSE, FALSE, 0);
 
+        // Files waiting to be sent, above the composer, with where they will go.
+        g_messages.attach_bar = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+        gtk_widget_set_margin_start(g_messages.attach_bar, 14);
+        gtk_widget_set_margin_end(g_messages.attach_bar, 12);
+        gtk_widget_set_margin_top(g_messages.attach_bar, 6);
+        GtkWidget* chips_scroll = gtk_scrolled_window_new(nullptr, nullptr);
+        gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(chips_scroll), GTK_POLICY_AUTOMATIC, GTK_POLICY_NEVER);
+        gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(chips_scroll), TRUE);
+        g_messages.attach_chips = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+        gtk_container_add(GTK_CONTAINER(chips_scroll), g_messages.attach_chips);
+        gtk_box_pack_start(GTK_BOX(g_messages.attach_bar), chips_scroll, FALSE, FALSE, 0);
+        GtkWidget* attach_note =
+            gtk_label_new(_("Sent as catbox.moe links: anyone with a link can open the file."));
+        gtk_label_set_xalign(GTK_LABEL(attach_note), 0.0);
+        gtk_label_set_line_wrap(GTK_LABEL(attach_note), TRUE);
+        gtk_style_context_add_class(gtk_widget_get_style_context(attach_note), "muted");
+        gtk_style_context_add_class(gtk_widget_get_style_context(attach_note), "tether-reply-bar");
+        gtk_box_pack_start(GTK_BOX(g_messages.attach_bar), attach_note, FALSE, FALSE, 0);
+        gtk_widget_show_all(g_messages.attach_bar);
+        gtk_widget_hide(g_messages.attach_bar);
+        gtk_widget_set_no_show_all(g_messages.attach_bar, TRUE);
+
         gtk_box_pack_start(GTK_BOX(conversation_box), g_messages.reply_bar, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(conversation_box), g_messages.attach_bar, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(conversation_box), composer_box, FALSE, FALSE, 0);
         gtk_stack_add_named(GTK_STACK(g_messages.placeholder_stack), conversation_box, "conversation");
 

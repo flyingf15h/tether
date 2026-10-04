@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 14:55-0400\n"
+"POT-Creation-Date: 2026-10-04 15:22-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Simplified Chinese\n"
@@ -2469,6 +2469,10 @@ msgid "Select a conversation"
 msgstr "选择一个会话"
 
 #: src/gtk/messages_view.cpp
+msgid "Uploading…"
+msgstr "正在上传…"
+
+#: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
 msgstr "请输入收件人。"
 
@@ -2483,6 +2487,42 @@ msgstr "无法在此会话中回复。"
 #: src/gtk/messages_view.cpp
 msgid "No answer about that message; it may still have been sent."
 msgstr "没有关于该信息的回应；它仍有可能已被发送。"
+
+#: src/gtk/messages_view.cpp
+msgid "Remove"
+msgstr "移除"
+
+#: src/gtk/messages_view.cpp
+msgid "Pasted image"
+msgstr "粘贴的图片"
+
+#: src/gtk/messages_view.cpp
+msgid "{} is larger than catbox.moe's 200 MB limit."
+msgstr "{} 超过了 catbox.moe 的 200 MB 上限。"
+
+#: src/gtk/messages_view.cpp
+msgid "Could not save the pasted image."
+msgstr "无法保存粘贴的图片。"
+
+#: src/gtk/messages_view.cpp
+msgid "Choose files to send"
+msgstr "选择要发送的文件"
+
+#: src/gtk/messages_view.cpp
+msgid "Images and videos"
+msgstr "图片和视频"
+
+#: src/gtk/messages_view.cpp
+msgid "All files"
+msgstr "所有文件"
+
+#: src/gtk/messages_view.cpp
+msgid "Could not upload {}: {}"
+msgstr "无法上传 {}：{}"
+
+#: src/gtk/messages_view.cpp
+msgid "Uploading {} of {}…"
+msgstr "正在上传第 {} 个，共 {} 个…"
 
 #: src/gtk/messages_view.cpp
 msgid "Could not reach the Tether daemon; the message was not sent."
@@ -2521,6 +2561,10 @@ msgid "Cancel reply"
 msgstr "取消回复"
 
 #: src/gtk/messages_view.cpp
+msgid "Attach images or files"
+msgstr "附加图片或文件"
+
+#: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
 msgstr "表情 (Ctrl+.)"
 
@@ -2531,6 +2575,10 @@ msgstr "发送"
 #: src/gtk/messages_view.cpp
 msgid "Retry"
 msgstr "重试"
+
+#: src/gtk/messages_view.cpp
+msgid "Sent as catbox.moe links: anyone with a link can open the file."
+msgstr "以 catbox.moe 链接发送：任何拿到链接的人都能打开该文件。"
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"

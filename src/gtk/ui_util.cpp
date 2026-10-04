@@ -117,7 +117,7 @@ button.tether-message-action:hover {
     transition: border-color 150ms ease-out;
     border-radius: 19px;
     border: 1px solid alpha(@theme_fg_color, 0.22);
-    padding: 2px 3px 2px 12px;
+    padding: 2px 3px 2px 3px;
     background-color: @theme_base_color;
 }
 
@@ -169,6 +169,22 @@ button.tether-send {
 button.tether-send:disabled {
     background-color: alpha(@theme_fg_color, 0.18);
     color: alpha(#ffffff, 0.8);
+}
+
+.tether-attachment image {
+    border-radius: 8px;
+    background-color: alpha(@theme_fg_color, 0.06);
+}
+
+button.tether-attachment-remove {
+    min-width: 20px;
+    min-height: 20px;
+    padding: 0;
+    margin: 2px;
+    border-radius: 10px;
+    background: alpha(black, 0.6);
+    color: white;
+    border: none;
 }
 
 .tether-reply-bar {

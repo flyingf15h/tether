@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 14:55-0400\n"
+"POT-Creation-Date: 2026-10-04 15:22-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Korean\n"
@@ -2517,6 +2517,10 @@ msgid "Select a conversation"
 msgstr "대화 선택"
 
 #: src/gtk/messages_view.cpp
+msgid "Uploading…"
+msgstr "업로드 중…"
+
+#: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
 msgstr "받는 사람을 입력하십시오."
 
@@ -2531,6 +2535,42 @@ msgstr "이 대화에는 답장할 수 없습니다."
 #: src/gtk/messages_view.cpp
 msgid "No answer about that message; it may still have been sent."
 msgstr "그 메시지에 대한 응답이 없습니다. 그래도 전송되었을 수 있습니다."
+
+#: src/gtk/messages_view.cpp
+msgid "Remove"
+msgstr "제거"
+
+#: src/gtk/messages_view.cpp
+msgid "Pasted image"
+msgstr "붙여넣은 이미지"
+
+#: src/gtk/messages_view.cpp
+msgid "{} is larger than catbox.moe's 200 MB limit."
+msgstr "{}이(가) catbox.moe의 200MB 제한을 넘습니다."
+
+#: src/gtk/messages_view.cpp
+msgid "Could not save the pasted image."
+msgstr "붙여넣은 이미지를 저장할 수 없습니다."
+
+#: src/gtk/messages_view.cpp
+msgid "Choose files to send"
+msgstr "보낼 파일 선택"
+
+#: src/gtk/messages_view.cpp
+msgid "Images and videos"
+msgstr "이미지 및 동영상"
+
+#: src/gtk/messages_view.cpp
+msgid "All files"
+msgstr "모든 파일"
+
+#: src/gtk/messages_view.cpp
+msgid "Could not upload {}: {}"
+msgstr "{}을(를) 업로드할 수 없습니다: {}"
+
+#: src/gtk/messages_view.cpp
+msgid "Uploading {} of {}…"
+msgstr "{}/{} 업로드 중…"
 
 #: src/gtk/messages_view.cpp
 msgid "Could not reach the Tether daemon; the message was not sent."
@@ -2569,6 +2609,10 @@ msgid "Cancel reply"
 msgstr "답장 취소"
 
 #: src/gtk/messages_view.cpp
+msgid "Attach images or files"
+msgstr "이미지나 파일 첨부"
+
+#: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
 msgstr "이모지 (Ctrl+.)"
 
@@ -2579,6 +2623,12 @@ msgstr "보내기"
 #: src/gtk/messages_view.cpp
 msgid "Retry"
 msgstr "다시 시도"
+
+#: src/gtk/messages_view.cpp
+msgid "Sent as catbox.moe links: anyone with a link can open the file."
+msgstr ""
+"catbox.moe 링크로 보내집니다. 링크가 있는 사람은 누구나 파일을 열 수 있습니"
+"다."
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"
