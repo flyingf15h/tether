@@ -44,6 +44,14 @@ namespace tether {
 
         void notify_file_arrived(const std::filesystem::path& path);
 
+        // Where the incoming call popup's buttons go: action is answer_here,
+        // answer or hangup, path the ringing call. Called on the notifier's thread.
+        void set_call_action_handler(std::function<void(const std::string& action, const std::string& path)> handler);
+
+        // One popup per ringing call; showing another replaces it.
+        void show_incoming_call(const std::string& path, const std::string& caller, const std::string& detail);
+        void dismiss_incoming_call();
+
         void notify(const NotificationSpec& spec);
 
     private:

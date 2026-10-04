@@ -258,6 +258,47 @@ namespace tether::bluetooth {
                       err);
     }
 
+    bool TelephonyClient::claim_audio(TelephonySource& source, const TelephonySnapshot& snap, std::string& err) {
+        if (!route_audio(source, snap, false, err))
+            return false;
+        std::lock_guard<std::mutex> lock(audio_mutex_);
+        audio_claimed_ = true;
+        claimed_call_seen_ = !snap.calls.empty();
+        return true;
+    }
+
+    void TelephonyClient::settle_audio() {
+        {
+            std::lock_guard<std::mutex> lock(audio_mutex_);
+            if (!audio_claimed_)
+                return;
+        }
+        const auto [source, snap] = pick();
+        std::lock_guard<std::mutex> lock(audio_mutex_);
+        if (!source || !source->ids().transport_iface) {
+            // The gateway went away, and PipeWire resets RejectSCO with it.
+            audio_claimed_ = claimed_call_seen_ = false;
+            return;
+        }
+        if (!snap.calls.empty()) {
+            claimed_call_seen_ = true;
+            return;
+        }
+        if (!claimed_call_seen_)
+            return;
+        audio_claimed_ = claimed_call_seen_ = false;
+        std::string err;
+        if (!invoke(*source,
+                    snap.gateway.path,
+                    "org.freedesktop.DBus.Properties",
+                    "Set",
+                    g_variant_new("(ssv)", source->ids().transport_iface, "RejectSCO", g_variant_new_boolean(TRUE)),
+                    err))
+            debug::log(INFO, "telephony: could not hand call audio back to the iPhone: {}", err);
+        else
+            debug::log(INFO, "telephony: call ended, the next call's audio stays on the iPhone");
+    }
+
     bool TelephonyClient::call_action(const std::string& path, const std::string& action, std::string& err) {
         const auto [source, snap] = pick();
         if (!source) {
@@ -266,7 +307,7 @@ namespace tether::bluetooth {
         }
         const std::vector<Call>& live = snap.calls;
 
-        if (action == "answer" || action == "hangup") {
+        if (action == "answer" || action == "answer_here" || action == "hangup") {
             std::string target = path;
             if (target.empty() && live.size() == 1)
                 target = live.front().path;
@@ -278,12 +319,19 @@ namespace tether::bluetooth {
                 err = _("That call is no longer active.");
                 return false;
             }
+            // RejectSCO has to drop before the answer for the phone to bring the
+            // voice link to this computer.
+            if (action == "answer_here" && !claim_audio(*source, snap, err))
+                return false;
             return invoke(
-                *source, target, source->ids().call_iface, action == "answer" ? "Answer" : "Hangup", nullptr, err);
+                *source, target, source->ids().call_iface, action == "hangup" ? "Hangup" : "Answer", nullptr, err);
         }
 
-        if (action == "audio_here" || action == "audio_phone")
-            return route_audio(*source, snap, action == "audio_phone", err);
+        // Moving a call here is for that call: the default comes back once it ends.
+        if (action == "audio_here")
+            return claim_audio(*source, snap, err);
+        if (action == "audio_phone")
+            return route_audio(*source, snap, true, err);
 
         static const std::pair<const char*, const char*> gateway_actions[] = {
             {"hangup_all", "HangupAll"},

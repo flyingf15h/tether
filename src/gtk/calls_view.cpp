@@ -16,10 +16,13 @@ namespace tether::ui {
             GtkWidget* stack = nullptr;
             GtkWidget* entry = nullptr;
             GtkWidget* dial_button = nullptr;
+            GtkWidget* dial_phone_button = nullptr;
             GtkWidget* network_label = nullptr;
             bool visible = false;
             bool available = false;
             bool audio_routable = false;
+            // The voice link is up on this computer.
+            bool audio_here = false;
         };
 
         CallsState g_calls;
@@ -47,11 +50,13 @@ namespace tether::ui {
 
         void on_answer_clicked(GtkButton* button, gpointer) { send_action("answer", button_path(button)); }
 
+        void on_answer_here_clicked(GtkButton* button, gpointer) { send_action("answer_here", button_path(button)); }
+
         void on_audio_here_clicked(GtkButton*, gpointer) { send_action("audio_here", ""); }
 
         void on_hangup_clicked(GtkButton* button, gpointer) { send_action("hangup", button_path(button)); }
 
-        void on_dial_clicked(GtkButton*, gpointer) {
+        void dial(bool audio_here) {
             const gchar* text = gtk_entry_get_text(GTK_ENTRY(g_calls.entry));
             const std::string number = text ? text : "";
             if (number.empty())
@@ -59,9 +64,17 @@ namespace tether::ui {
             nlohmann::json j;
             j["command"] = "bt_call_dial";
             j["number"] = number;
+            if (audio_here)
+                j["audio"] = "here";
             daemon_send(j);
             gtk_entry_set_text(GTK_ENTRY(g_calls.entry), "");
         }
+
+        // Enter in the number field calls from the laptop when it can carry the
+        // audio, and on the iPhone otherwise.
+        void on_dial_clicked(GtkButton*, gpointer) { dial(g_calls.audio_routable); }
+
+        void on_dial_phone_clicked(GtkButton*, gpointer) { dial(false); }
 
         void attach_path(GtkWidget* button, const std::string& path) {
             g_object_set_data_full(G_OBJECT(button), "call-path", g_strdup(path.c_str()), g_free);
@@ -156,17 +169,36 @@ namespace tether::ui {
             gtk_box_pack_start(GTK_BOX(text), secondary_label, FALSE, FALSE, 0);
             gtk_box_pack_start(GTK_BOX(box), text, TRUE, TRUE, 0);
 
-            if (ringing) {
-                GtkWidget* answer = gtk_button_new_with_label(_("Answer"));
-                gtk_style_context_add_class(gtk_widget_get_style_context(answer), "suggested-action");
+            if (ringing && !call.value("outgoing", false)) {
+                if (g_calls.audio_routable) {
+                    GtkWidget* here = gtk_button_new_with_label(_("Answer on laptop"));
+                    gtk_style_context_add_class(gtk_widget_get_style_context(here), "suggested-action");
+                    attach_path(here, path);
+                    g_signal_connect(here, "clicked", G_CALLBACK(on_answer_here_clicked), nullptr);
+                    gtk_widget_set_valign(here, GTK_ALIGN_CENTER);
+                    gtk_box_pack_start(GTK_BOX(box), here, FALSE, FALSE, 0);
+                }
+                GtkWidget* answer =
+                    gtk_button_new_with_label(g_calls.audio_routable ? _("Answer on iPhone") : _("Answer"));
+                if (!g_calls.audio_routable)
+                    gtk_style_context_add_class(gtk_widget_get_style_context(answer), "suggested-action");
                 attach_path(answer, path);
                 g_signal_connect(answer, "clicked", G_CALLBACK(on_answer_clicked), nullptr);
                 gtk_widget_set_valign(answer, GTK_ALIGN_CENTER);
                 gtk_box_pack_start(GTK_BOX(box), answer, FALSE, FALSE, 0);
             }
 
-            if (call.value("connected", false) && g_calls.audio_routable) {
-                GtkWidget* audio = gtk_button_new_with_label(_("Audio here"));
+            if (call.value("connected", false) && g_calls.audio_here) {
+                // PipeWire can only gate the next voice link, not release this one,
+                // so moving it back is the iPhone's call.
+                GtkWidget* where = gtk_label_new(_("Audio on this computer"));
+                gtk_widget_set_tooltip_text(where, _("To move it back, pick iPhone under Audio on the phone's call screen."));
+                gtk_style_context_add_class(gtk_widget_get_style_context(where), "muted");
+                gtk_widget_set_valign(where, GTK_ALIGN_CENTER);
+                gtk_box_pack_start(GTK_BOX(box), where, FALSE, FALSE, 0);
+            } else if (call.value("connected", false) && g_calls.audio_routable) {
+                GtkWidget* audio = gtk_button_new_with_label(_("Move to laptop"));
+                gtk_widget_set_tooltip_text(audio, _("Play this call on the laptop's speakers and mic."));
                 g_signal_connect(audio, "clicked", G_CALLBACK(on_audio_here_clicked), nullptr);
                 gtk_widget_set_valign(audio, GTK_ALIGN_CENTER);
                 gtk_box_pack_start(GTK_BOX(box), audio, FALSE, FALSE, 0);
@@ -225,12 +257,16 @@ namespace tether::ui {
 
             gtk_widget_set_sensitive(g_calls.entry, g_calls.available);
             gtk_widget_set_sensitive(g_calls.dial_button, g_calls.available);
+            gtk_widget_set_sensitive(g_calls.dial_phone_button, g_calls.available);
             set_text(g_calls.network_label, g_calls.available ? network_text(calls) : "");
             set_accessible_name(g_calls.network_label, g_calls.available ? network_text(calls, true) : "");
 
             const std::string reason = calls.is_object() ? calls.value("reason", "") : "";
             const std::string audio = calls.is_object() ? calls.value("audio", "") : "";
-            g_calls.audio_routable = !audio.empty() && audio != "active";
+            // Any transport state means PipeWire holds Hands-Free and can move the audio either way.
+            g_calls.audio_routable = !audio.empty();
+            g_calls.audio_here = audio == "active";
+            gtk_widget_set_visible(g_calls.dial_button, g_calls.audio_routable);
             set_text(g_calls.status_label,
                      g_calls.available
                          ? std::string(_("No calls.")) + (reason.empty() ? "" : "\n" + reason)
@@ -257,11 +293,19 @@ namespace tether::ui {
         g_signal_connect(g_calls.entry, "activate", G_CALLBACK(on_dial_clicked), nullptr);
         gtk_box_pack_start(GTK_BOX(dial_bar), g_calls.entry, TRUE, TRUE, 0);
 
-        g_calls.dial_button = gtk_button_new_with_label(_("Call"));
+        g_calls.dial_button = gtk_button_new_with_label(_("Call from laptop"));
+        gtk_widget_set_tooltip_text(g_calls.dial_button, _("Place the call with its audio on this computer."));
         gtk_style_context_add_class(gtk_widget_get_style_context(g_calls.dial_button), "suggested-action");
         gtk_widget_set_sensitive(g_calls.dial_button, FALSE);
+        gtk_widget_set_no_show_all(g_calls.dial_button, TRUE);
         g_signal_connect(g_calls.dial_button, "clicked", G_CALLBACK(on_dial_clicked), nullptr);
         gtk_box_pack_start(GTK_BOX(dial_bar), g_calls.dial_button, FALSE, FALSE, 0);
+
+        g_calls.dial_phone_button = gtk_button_new_with_label(_("Call on iPhone"));
+        gtk_widget_set_tooltip_text(g_calls.dial_phone_button, _("Place the call with its audio on the iPhone."));
+        gtk_widget_set_sensitive(g_calls.dial_phone_button, FALSE);
+        g_signal_connect(g_calls.dial_phone_button, "clicked", G_CALLBACK(on_dial_phone_clicked), nullptr);
+        gtk_box_pack_start(GTK_BOX(dial_bar), g_calls.dial_phone_button, FALSE, FALSE, 0);
 
         g_calls.network_label = gtk_label_new("");
         gtk_widget_set_tooltip_text(g_calls.network_label, _("The iPhone's carrier, signal, and battery."));

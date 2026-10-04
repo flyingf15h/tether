@@ -4,6 +4,7 @@
 
 #include <gio/gio.h>
 #include <memory>
+#include <mutex>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <utility>
@@ -80,13 +81,17 @@ namespace tether::bluetooth {
         // The number is normalized here, so callers may pass what the user typed.
         bool dial(const std::string& number, std::string& err);
 
-        // action: answer, hangup, hangup_all, swap, hold_and_answer,
+        // action: answer, answer_here, hangup, hangup_all, swap, hold_and_answer,
         // release_and_answer, release_and_swap, multiparty, audio_here,
         // audio_phone. `path` is the call for answer and hangup, and is ignored
         // otherwise.
         bool call_action(const std::string& path, const std::string& action, std::string& err);
 
         bool send_tones(const std::string& tones, std::string& err);
+
+        // Hands the call audio back to the stack's default once a call that was
+        // moved here (audio_here, answer_here) has ended. Called on every calls sync.
+        void settle_audio();
 
     private:
         // The serving source and its snapshot or null for none.
@@ -103,8 +108,18 @@ namespace tether::bluetooth {
         // stack holding Hands-Free cannot carry audio at all.
         bool route_audio(TelephonySource& source, const TelephonySnapshot& snap, bool to_phone, std::string& err);
 
+        // Pulls the audio here for the current or next call, and remembers to hand
+        // it back to the default once that call ends. Fails on a stack that
+        // cannot carry audio.
+        bool claim_audio(TelephonySource& source, const TelephonySnapshot& snap, std::string& err);
+
         std::vector<std::unique_ptr<TelephonySource>> sources_;
         std::string address_;
+        std::mutex audio_mutex_;
+        // Set while a desktop-handled call holds RejectSCO off; seen_call once
+        // that call has shown up, so a dial still being set up is not released.
+        bool audio_claimed_ = false;
+        bool claimed_call_seen_ = false;
     };
 
     // bluez's hfp on the system bus. No call audio.

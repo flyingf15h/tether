@@ -351,6 +351,83 @@ namespace tether {
             return G_SOURCE_REMOVE;
         }
 
+        std::function<void(const std::string&, const std::string&)> g_call_handler;
+
+        // The ringing call's popup, owned by the notifier thread.
+        NotifyNotification* g_call_popup = nullptr;
+        std::string g_call_popup_path;
+
+        struct IncomingCall {
+            std::string path;
+            std::string caller;
+            std::string detail;
+        };
+
+        void on_call_action(NotifyNotification*, char* action, gpointer user_data) {
+            const auto* data = static_cast<NotificationActionData*>(user_data);
+            if (g_call_handler && action)
+                g_call_handler(action, data->payload);
+        }
+
+        void on_call_popup_closed(NotifyNotification* notification, gpointer) {
+            if (notification == g_call_popup) {
+                g_call_popup = nullptr;
+                g_call_popup_path.clear();
+            }
+            g_object_unref(notification);
+        }
+
+        gboolean dismiss_call_on_main(gpointer) {
+            if (g_call_popup) {
+                NotifyNotification* popup = g_call_popup;
+                g_call_popup = nullptr;
+                g_call_popup_path.clear();
+                // The "closed" handler drops the reference.
+                notify_notification_close(popup, nullptr);
+            }
+            return G_SOURCE_REMOVE;
+        }
+
+        gboolean show_call_on_main(gpointer user_data) {
+            std::unique_ptr<IncomingCall> call(static_cast<IncomingCall*>(user_data));
+            if (g_call_popup && g_call_popup_path == call->path)
+                return G_SOURCE_REMOVE;
+            dismiss_call_on_main(nullptr);
+
+            const std::string icon = resolve_icon({"call-incoming", "call-start", "phone"});
+            NotifyNotification* popup =
+                notify_notification_new(tr_format(_("{} is calling"), call->caller).c_str(),
+                                        call->detail.empty() ? nullptr : call->detail.c_str(),
+                                        icon.empty() ? nullptr : icon.c_str());
+            if (!popup)
+                return G_SOURCE_REMOVE;
+            set_identity(popup, _("Phone"));
+            notify_notification_set_urgency(popup, NOTIFY_URGENCY_CRITICAL);
+            notify_notification_set_timeout(popup, NOTIFY_EXPIRES_NEVER);
+            notify_notification_set_category(popup, "call.incoming");
+            g_signal_connect(popup, "closed", G_CALLBACK(on_call_popup_closed), nullptr);
+
+            const std::pair<const char*, const char*> actions[] = {
+                {"answer_here", _("Answer on laptop")},
+                {"answer", _("Answer on iPhone")},
+                {"hangup", _("Decline")},
+            };
+            for (const auto& [key, label] : actions)
+                notify_notification_add_action(
+                    popup, key, label, on_call_action, new NotificationActionData{call->path}, free_action_data);
+
+            GError* error = nullptr;
+            if (!notify_notification_show(popup, &error)) {
+                debug::log(ERR, "Failed to show call notification: {}", error ? error->message : "unknown");
+                g_clear_error(&error);
+                g_object_unref(popup);
+                return G_SOURCE_REMOVE;
+            }
+            g_call_popup = popup;
+            g_call_popup_path = call->path;
+            return G_SOURCE_REMOVE;
+        }
+
     } // namespace
 
     struct DesktopNotifier::Impl {
@@ -423,6 +500,27 @@ namespace tether {
         // notifier's loop.
         auto* copy = new NotificationSpec(spec);
         g_main_context_invoke_full(impl_->context, G_PRIORITY_DEFAULT, show_spec_on_main, copy, nullptr);
+    }
+
+    void DesktopNotifier::set_call_action_handler(
+        std::function<void(const std::string& action, const std::string& path)> handler) {
+        g_call_handler = std::move(handler);
+    }
+
+    void DesktopNotifier::show_incoming_call(const std::string& path,
+                                             const std::string& caller,
+                                             const std::string& detail) {
+        // A ringing phone is not a mirrored popup: it is shown even with popups off.
+        if (!impl_->initialized)
+            return;
+        auto* call = new IncomingCall{path, caller, detail};
+        g_main_context_invoke_full(impl_->context, G_PRIORITY_DEFAULT, show_call_on_main, call, nullptr);
+    }
+
+    void DesktopNotifier::dismiss_incoming_call() {
+        if (!impl_->initialized)
+            return;
+        g_main_context_invoke_full(impl_->context, G_PRIORITY_DEFAULT, dismiss_call_on_main, nullptr, nullptr);
     }
 
     void DesktopNotifier::notify_file_arrived(const std::filesystem::path& path) {

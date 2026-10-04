@@ -225,7 +225,7 @@ static const Opt kOptions[] = {
     {"--bt-answer", N_("Answer the ringing call.")},
     {"--bt-hangup", N_("Hang up every call.")},
     {"--bt-calls-enable <on|off>",
-     N_("Turn call control on or off. Calls run over Bluetooth Hands-Free; the audio stays on the iPhone.")},
+     N_("Turn call control on or off. Calls run over Bluetooth Hands-Free. With PipeWire holding Hands-Free, calls answered or placed here play on this computer.")},
     {"--bt-call-audio <on|off>",
      N_("Play call audio on this computer, or leave it on the iPhone. Needs PipeWire to be the stack holding "
         "Hands-Free; off applies from the next call.")},

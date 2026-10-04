@@ -683,8 +683,35 @@ int main(int argc, char** argv) {
                 });
         }
 
-        connections.set_call_handler([&run_handoff](const nlohmann::json& calls) {
+        notifier.set_call_action_handler([&loop](const std::string& action, const std::string& path) {
+            loop.post([action, path] {
+                std::string err;
+                if (tether::bluetooth::g_bt_connections &&
+                    !tether::bluetooth::g_bt_connections->call_action(path, action, err))
+                    debug::log(WARN, "call popup: {} failed: {}", action, err);
+            });
+        });
+
+        connections.set_call_handler([&run_handoff, &notifier, notifier_ready](const nlohmann::json& calls) {
             run_handoff(calls);
+
+            // A popup for the ringing call, gone once it is answered anywhere or ends.
+            if (notifier_ready) {
+                const nlohmann::json* ringing = nullptr;
+                for (const auto& call : calls)
+                    if (call.value("ringing", false) && !call.value("outgoing", false))
+                        ringing = &call;
+                if (ringing) {
+                    const std::string name = ringing->value("name", "");
+                    const std::string number = ringing->value("number", "");
+                    const std::string caller =
+                        !name.empty() ? name : (!number.empty() ? number : std::string(_("Unknown caller")));
+                    notifier.show_incoming_call(
+                        ringing->value("path", ""), caller, name.empty() ? std::string{} : number);
+                } else {
+                    notifier.dismiss_incoming_call();
+                }
+            }
 
             nlohmann::json event;
             event["command"] = "bt_calls";

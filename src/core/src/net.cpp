@@ -1462,7 +1462,10 @@ namespace tether {
                         nlohmann::json payload;
                         payload["command"] = "bt_call_result";
                         payload["action"] = "dial";
+                        // "audio": "here" places the call with its audio on this computer.
+                        const bool here = j.value("audio", std::string{}) == "here";
                         payload["success"] = bluetooth::g_bt_connections &&
+                                             (!here || bluetooth::g_bt_connections->call_action("", "audio_here", err)) &&
                                              bluetooth::g_bt_connections->dial(j.value("number", std::string{}), err);
                         if (!payload["success"])
                             payload["message"] = err;

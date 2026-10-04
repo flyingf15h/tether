@@ -1233,6 +1233,7 @@ namespace tether::bluetooth {
             last_calls = nullptr;
             return;
         }
+        client->settle_audio();
         nlohmann::json calls = client->calls();
         if (calls == last_calls)
             return;
