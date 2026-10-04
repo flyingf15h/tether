@@ -94,6 +94,10 @@ namespace tether {
     void set_desktop_popups_enabled(bool enabled);
     bool desktop_popups_enabled();
 
+    // Whether incoming texts pop up at all, separately from other iPhone alerts.
+    void set_message_popups_enabled(bool enabled);
+    bool message_popups_enabled();
+
     // Whether phone popups include the message text. Off keeps only the sender.
     void set_popup_previews_enabled(bool enabled);
     bool popup_previews_enabled();

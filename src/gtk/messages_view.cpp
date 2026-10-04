@@ -14,6 +14,7 @@
 #include <ctime>
 #include <gdk/gdkkeysyms.h>
 #include <glib/gstdio.h>
+#include <deque>
 #include <map>
 #include <set>
 #include <string>
@@ -52,8 +53,14 @@ namespace tether::ui {
 
             // Body of the message the next send replies to, or empty.
             std::string reply_to;
-            // A reaction is in flight: its result must not clear what is being typed.
-            bool side_send = false;
+            // Messages waiting for the phone, sent one at a time in order. The
+            // front one is in flight while `sending` is set.
+            struct Outgoing {
+                std::string thread;
+                std::string body;
+                GtkWidget* row = nullptr;  // its optimistic bubble, if on screen
+            };
+            std::deque<Outgoing> outbox;
             // Where each rendered message shows its reactions, by body text.
             std::map<std::string, GtkWidget*> reaction_slots;
             // "N replies" under each rendered message, by body text.
@@ -411,17 +418,11 @@ namespace tether::ui {
             return out;
         }
 
+        void deliver(const std::string& thread, const std::string& body);
+
         void send_side_message(const std::string& body) {
-            if (g_messages.selected_thread.empty() || g_messages.sending)
-                return;
-            nlohmann::json j;
-            j["command"] = "bt_send_message";
-            j["thread"] = g_messages.selected_thread;
-            j["body"] = body;
-            if (daemon_send(j)) {
-                g_messages.side_send = true;
-                set_status_main(_("Sending…"));
-            }
+            if (!g_messages.selected_thread.empty())
+                deliver(g_messages.selected_thread, body);
         }
 
         void add_reaction(const std::string& target, const std::string& emoji) {
@@ -889,6 +890,8 @@ namespace tether::ui {
                 g_messages.marked_read.insert(pending.begin(), pending.end());
         }
 
+        void drop_pending_row(const std::string& body);
+
         void append_message_rows(const nlohmann::json& messages, size_t from) {
             for (size_t i = from; i < messages.size(); ++i) {
                 const auto& message = messages[i];
@@ -913,6 +916,8 @@ namespace tether::ui {
                 // iMessage only stamps after a pause, not every time the sender changes.
                 const bool pause = first || stamp - g_messages.rendered_last_stamp >= STAMP_GAP_SECONDS ||
                                    !same_local_day(g_messages.rendered_last_stamp, stamp);
+                if (outgoing)
+                    drop_pending_row(message.value("body", ""));
                 gtk_list_box_insert(
                     GTK_LIST_BOX(g_messages.conversation), build_message_row(message, pause, !grouped), -1);
                 g_messages.rendered_last_stamp = stamp;
@@ -1042,7 +1047,8 @@ namespace tether::ui {
 
             // The box stays typable whenever the conversation can take a reply;
             // only the button waits for there to be something in it.
-            const bool composer_live = can_send && !g_messages.sending && !g_messages.uploading;
+            // A send in flight never locks the box: messages queue behind it.
+            const bool composer_live = can_send && !g_messages.uploading;
             gtk_widget_set_sensitive(g_messages.composer, composer_live);
             const bool has_content = !composer_text().empty() || !g_messages.attachments.empty();
             gtk_widget_set_sensitive(g_messages.send_button, composer_live && has_content);
@@ -1070,7 +1076,7 @@ namespace tether::ui {
             if (g_messages.composer_notice) {
                 // Why the box is shut.
                 const char* notice = nullptr;
-                if (reason && !composer_live && !g_messages.sending && !g_messages.uploading)
+                if (reason && !composer_live && !g_messages.uploading)
                     notice = reason;
                 if (notice)
                     set_text(g_messages.composer_notice, notice);
@@ -1108,19 +1114,31 @@ namespace tether::ui {
             g_messages.sending = false;
         }
 
+        void finish_front_send(bool ok, const std::string& reason);
+        void pump_outbox();
+
         gboolean on_send_timeout(gpointer) {
             g_messages.send_watchdog_id = 0;
             if (g_messages.sending) {
-                g_messages.sending = false;
-                update_composer_sensitivity();
-                focus_composer_soon();
+                // Probably sent; keep its bubble rather than offering a duplicate.
+                finish_front_send(true, "");
                 set_status_main(_("No answer about that message; it may still have been sent."));
             }
             return G_SOURCE_REMOVE;
         }
 
         // catbox.moe: no account, unlisted random URLs, kept until deleted.
-        constexpr const char* UPLOAD_URL = "https://catbox.moe/user/api.php";
+        // Tried in order. Some networks refuse catbox.moe outright, so a second
+        // public host keeps attachments working there. Both return a bare URL.
+        struct UploadHost {
+            const char* url;
+            const char* field;
+            const char* extra;  // an additional -F field, or null
+        };
+        constexpr UploadHost UPLOAD_HOSTS[] = {
+            {"https://catbox.moe/user/api.php", "fileToUpload", "reqtype=fileupload"},
+            {"https://0x0.st", "file", nullptr},
+        };
         constexpr goffset UPLOAD_MAX_BYTES = 200LL * 1024 * 1024;
 
         void forget_pasted(const std::string& path) {
@@ -1204,7 +1222,7 @@ namespace tether::ui {
                 return;
             if (st.st_size > UPLOAD_MAX_BYTES) {
                 gchar* base = g_path_get_basename(path.c_str());
-                set_status_main(tether::tr_format(_("{} is larger than catbox.moe's 200 MB limit."), base));
+                set_status_main(tether::tr_format(_("{} is larger than the 200 MB upload limit."), base));
                 g_free(base);
                 return;
             }
@@ -1341,6 +1359,8 @@ namespace tether::ui {
             std::string text;
             std::string thread;
             size_t total = 0;
+            // Index into UPLOAD_HOSTS for the file at the front of `pending`.
+            size_t host = 0;
         };
 
         void deliver(const std::string& thread, const std::string& body);
@@ -1348,6 +1368,9 @@ namespace tether::ui {
 
         void upload_failed(UploadJob* job, const std::string& reason) {
             g_messages.uploading = false;
+            // The text was cleared at Send; give it back with the files still attached.
+            if (g_messages.selected_thread == job->thread && composer_text().empty())
+                set_composer_text(job->typed);
             delete job;
             update_composer_sensitivity();
             set_status_main(reason);
@@ -1373,6 +1396,12 @@ namespace tether::ui {
             gchar* base = g_path_get_basename(job->pending.front().c_str());
             const std::string name = base;
             g_free(base);
+            if (!ok && job->host + 1 < G_N_ELEMENTS(UPLOAD_HOSTS)) {
+                // That host is unreachable or refused the file; try the next one.
+                ++job->host;
+                upload_next(job);
+                return;
+            }
             if (!ok) {
                 if (detail.size() > 160)
                     detail = detail.substr(0, 160) + "…";
@@ -1382,6 +1411,7 @@ namespace tether::ui {
             job->links.push_back(link);
             job->sent_files.push_back(job->pending.front());
             job->pending.erase(job->pending.begin());
+            job->host = 0;
             upload_next(job);
         }
 
@@ -1397,10 +1427,6 @@ namespace tether::ui {
                 const std::string thread = job->thread;
                 // The links take the files' place in the box, so a failed send
                 // is retried without uploading again.
-                if (g_messages.selected_thread == thread)
-                    set_composer_text(typed);
-                else
-                    g_messages.drafts[thread] = typed;
                 for (const auto& file : job->sent_files) {
                     auto& list = g_messages.attachments;
                     list.erase(std::remove(list.begin(), list.end(), file), list.end());
@@ -1421,12 +1447,18 @@ namespace tether::ui {
                     quoted += '\\';
                 quoted += c;
             }
-            const std::string field = "fileToUpload=@\"" + quoted + "\"";
-            const gchar* argv[] = {"curl", "-sS", "--fail-with-body", "--max-time", "300", "-F", "reqtype=fileupload",
-                                   "-F", field.c_str(), UPLOAD_URL, nullptr};
+            const UploadHost& host = UPLOAD_HOSTS[job->host];
+            const std::string field = std::string(host.field) + "=@\"" + quoted + "\"";
+            std::vector<const gchar*> argv = {"curl", "-sS", "--fail-with-body", "--max-time", "300", "-F", field.c_str()};
+            if (host.extra) {
+                argv.push_back("-F");
+                argv.push_back(host.extra);
+            }
+            argv.push_back(host.url);
+            argv.push_back(nullptr);
             GError* error = nullptr;
             GSubprocess* proc = g_subprocess_newv(
-                argv, GSubprocessFlags(G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE), &error);
+                argv.data(), GSubprocessFlags(G_SUBPROCESS_FLAGS_STDOUT_PIPE | G_SUBPROCESS_FLAGS_STDERR_PIPE), &error);
             if (!proc) {
                 const std::string reason = tether::tr_format(_("Could not upload {}: {}"), path, error->message);
                 g_clear_error(&error);
@@ -1449,6 +1481,9 @@ namespace tether::ui {
 
             hide_send_error();
             g_message("send: %zu chars, %zu attachment(s)", typed.size(), g_messages.attachments.size());
+            // Cleared now, not when the phone answers; a failure puts the text back.
+            g_messages.drafts.erase(g_messages.selected_thread);
+            set_composer_text("");
             if (!g_messages.attachments.empty()) {
                 auto* job = new UploadJob{g_messages.attachments, {}, {}, typed, body, g_messages.selected_thread, 0};
                 job->total = job->pending.size();
@@ -1460,26 +1495,74 @@ namespace tether::ui {
             deliver(g_messages.selected_thread, body);
         }
 
-        void deliver(const std::string& thread, const std::string& body) {
+        // The bubble goes up the moment Send is pressed, faded with "Sending…",
+        // and is swapped for the real message when the phone's copy arrives.
+        GtkWidget* add_pending_row(const std::string& body) {
+            nlohmann::json message{{"outgoing", true},
+                                   {"body", body},
+                                   {"timestamp", static_cast<int64_t>(std::time(nullptr))}};
+            const bool grouped = g_messages.rendered_last_outgoing &&
+                                 std::time(nullptr) - g_messages.rendered_last_stamp < GROUP_WINDOW_SECONDS;
+            GtkWidget* row = build_message_row(message, false, !grouped);
+            gtk_style_context_add_class(gtk_widget_get_style_context(row), "tether-pending");
+            if (g_messages.last_status)
+                gtk_label_set_text(GTK_LABEL(g_messages.last_status), _("Sending…"));
+            g_object_set_data_full(G_OBJECT(row), "pending-body", g_strdup(body.c_str()), g_free);
+            gtk_list_box_insert(GTK_LIST_BOX(g_messages.conversation), row, -1);
+            gtk_widget_show_all(row);
+            g_signal_connect(row,
+                             "destroy",
+                             G_CALLBACK(+[](GtkWidget* w, gpointer) {
+                                 for (auto& out : g_messages.outbox)
+                                     if (out.row == w)
+                                         out.row = nullptr;
+                             }),
+                             nullptr);
+            g_messages.pin_next = true;
+            restore_conversation_scroll(true);
+            return row;
+        }
+
+        // The phone's copy of a sent message replaces its optimistic bubble.
+        void drop_pending_row(const std::string& body) {
+            GList* rows = gtk_container_get_children(GTK_CONTAINER(g_messages.conversation));
+            for (GList* it = rows; it; it = it->next) {
+                const char* pending = (const char*)g_object_get_data(G_OBJECT(it->data), "pending-body");
+                if (pending && body == pending) {
+                    gtk_widget_destroy(GTK_WIDGET(it->data));
+                    break;
+                }
+            }
+            g_list_free(rows);
+        }
+
+        void pump_outbox() {
+            if (g_messages.sending || g_messages.outbox.empty())
+                return;
+            const auto& next = g_messages.outbox.front();
             nlohmann::json j;
             j["command"] = "bt_send_message";
-            j["thread"] = thread;
-            j["body"] = body;
+            j["thread"] = next.thread;
+            j["body"] = next.body;
             if (!daemon_send(j)) {
                 const char* reason = _("Could not reach the Tether daemon; the message was not sent.");
                 set_status_main(reason);
                 show_send_error(reason);
+                if (next.row)
+                    gtk_widget_destroy(next.row);
+                g_messages.outbox.pop_front();
                 return;
             }
-
-            // The composer stays locked until the phone answers. Sending is a
-            // real OBEX transfer and takes a moment; an unlocked box invites a
-            // second copy of the same message. The watchdog is what stops a
-            // result that never arrives from locking it for the whole session.
+            // The watchdog stops a result that never arrives from stalling the queue.
             g_messages.sending = true;
             g_messages.send_watchdog_id = g_timeout_add_seconds(SEND_TIMEOUT_SECONDS, on_send_timeout, nullptr);
-            update_composer_sensitivity();
             set_status_main(_("Sending…"));
+        }
+
+        void deliver(const std::string& thread, const std::string& body) {
+            GtkWidget* row = thread == g_messages.selected_thread ? add_pending_row(body) : nullptr;
+            g_messages.outbox.push_back({thread, body, row});
+            pump_outbox();
         }
 
         // Every messaging app has trained people that Enter sends and Shift+Enter
@@ -1504,36 +1587,38 @@ namespace tether::ui {
             return TRUE;
         }
 
-        void on_send_result(const nlohmann::json& event) {
-            if (g_messages.side_send) {
-                g_messages.side_send = false;
-                const bool ok = event.value("success", false);
-                set_status_main(ok ? _("Sent") : event.value("message", _("The message was not sent.")));
-                if (ok)
-                    g_messages.pin_next = true;
-                return;
-            }
+        void finish_front_send(bool ok, const std::string& reason) {
             clear_sending();
-            update_composer_sensitivity();
-            focus_composer_soon();
-
-            if (event.value("success", false)) {
-                // Only cleared once the phone accepted it, so a failed send
-                // leaves the text where the user can retry or copy it out.
-                g_messages.drafts.erase(g_messages.selected_thread);
-                set_composer_text("");
-                // The reply bar stays, so the next message continues the same thread.
+            if (g_messages.outbox.empty())
+                return;
+            auto sent = g_messages.outbox.front();
+            g_messages.outbox.pop_front();
+            if (ok) {
                 hide_send_error();
-                g_messages.pin_next = true;
+                if (sent.row && g_messages.outbox.empty() && g_messages.last_status)
+                    gtk_label_set_text(GTK_LABEL(g_messages.last_status), _("Sent"));
+                if (sent.row)
+                    gtk_style_context_remove_class(gtk_widget_get_style_context(sent.row), "tether-pending");
                 // The conversation now exists under this key, so the thread list
                 // refresh that follows will select it like any other.
                 leave_compose();
                 set_status_main(_("Sent"));
-                return;
+            } else {
+                if (sent.row)
+                    gtk_widget_destroy(sent.row);
+                // Back in the box, so Retry (or Enter) sends it again.
+                if (sent.thread == g_messages.selected_thread && composer_text().empty())
+                    set_composer_text(sent.body);
+                set_status_main(reason);
+                show_send_error(reason);
             }
-            const std::string reason = event.value("message", _("The message was not sent."));
-            set_status_main(reason);
-            show_send_error(reason);
+            update_composer_sensitivity();
+            pump_outbox();
+        }
+
+        void on_send_result(const nlohmann::json& event) {
+            const bool ok = event.value("success", false);
+            finish_front_send(ok, event.value("message", _("The message was not sent.")));
         }
 
         void clear_selection() {
@@ -2117,7 +2202,7 @@ namespace tether::ui {
         gtk_container_add(GTK_CONTAINER(chips_scroll), g_messages.attach_chips);
         gtk_box_pack_start(GTK_BOX(g_messages.attach_bar), chips_scroll, FALSE, FALSE, 0);
         GtkWidget* attach_note =
-            gtk_label_new(_("Sent as catbox.moe links: anyone with a link can open the file."));
+            gtk_label_new(_("Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and sent as a link: anyone with the link can open the file."));
         gtk_label_set_xalign(GTK_LABEL(attach_note), 0.0);
         gtk_label_set_line_wrap(GTK_LABEL(attach_note), TRUE);
         gtk_style_context_add_class(gtk_widget_get_style_context(attach_note), "muted");

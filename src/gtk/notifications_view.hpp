@@ -15,5 +15,6 @@ namespace tether::ui {
 
     // Reflects the daemon's desktop popup setting in the tab's mute switch.
     void notifications_view_set_muted(bool muted);
+    void notifications_view_set_message_popups(bool on);
 
 } // namespace tether::ui

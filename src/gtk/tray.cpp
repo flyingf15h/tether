@@ -280,7 +280,31 @@ namespace tether::ui {
         tray_refresh();
     }
 
+    // The red number on the taskbar icon, as Discord shows it. KDE's task manager
+    // (and Dock-style launchers) read the Unity LauncherEntry signal for this.
+    void publish_launcher_badge(int count) {
+        GDBusConnection* bus = g_bus_get_sync(G_BUS_TYPE_SESSION, nullptr, nullptr);
+        if (!bus)
+            return;
+        // The window may be matched to either desktop id depending on the shell.
+        for (const char* uri : {"application://tether-gtk.desktop", "application://com.tether.desktop.desktop"}) {
+            GVariantBuilder props;
+            g_variant_builder_init(&props, G_VARIANT_TYPE("a{sv}"));
+            g_variant_builder_add(&props, "{sv}", "count", g_variant_new_int64(count));
+            g_variant_builder_add(&props, "{sv}", "count-visible", g_variant_new_boolean(count > 0));
+            g_dbus_connection_emit_signal(bus,
+                                          nullptr,
+                                          "/com/tether/desktop/launcher",
+                                          "com.canonical.Unity.LauncherEntry",
+                                          "Update",
+                                          g_variant_new("(sa{sv})", uri, &props),
+                                          nullptr);
+        }
+        g_object_unref(bus);
+    }
+
     void tray_set_unread(int count) {
+        publish_launcher_badge(count);
         if (count == g_unread)
             return;
         g_unread = count;

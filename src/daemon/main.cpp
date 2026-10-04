@@ -238,7 +238,7 @@ int main(int argc, char** argv) {
 
             // ANCS deliberately shows no popup for Messages, because MAP is the
             // copy whose read state stays in sync with the phone. This is that popup.
-            if (backfill || message.outgoing || message.read)
+            if (backfill || message.outgoing || message.read || !tether::message_popups_enabled())
                 return;
 
             std::string who;
@@ -271,6 +271,7 @@ int main(int argc, char** argv) {
     tether::secret::set_retention(bt_config.retention);
     tether::set_desktop_popups_enabled(bt_config.desktop_popups_enabled);
     tether::set_popup_previews_enabled(bt_config.popup_previews_enabled);
+    tether::set_message_popups_enabled(bt_config.message_popups_enabled);
 
     // Pick the controller before the first capability, a second adapter never comes up bound to the wrong one.
     bluez.set_preferred_adapter(bt_config.adapter);

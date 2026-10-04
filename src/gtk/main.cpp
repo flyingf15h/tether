@@ -318,6 +318,7 @@ namespace {
             if (event.value("command", "") == "bt_status") {
                 set_calls_tab_visible(event.value("calls_enabled", false));
                 notifications_view_set_muted(!event.value("desktop_popups_enabled", true));
+                notifications_view_set_message_popups(event.value("message_popups_enabled", true));
                 calls_view_set_on_laptop(event.value("calls_on_laptop", true));
             }
             if (devices_view_handle_event(event))

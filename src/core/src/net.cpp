@@ -414,6 +414,7 @@ namespace tether {
         status["retention_ready"] = secret::have_key();
         status["desktop_popups_enabled"] = config.desktop_popups_enabled;
         status["popup_previews_enabled"] = config.popup_previews_enabled;
+        status["message_popups_enabled"] = config.message_popups_enabled;
         status["airpods_enabled"] = config.airpods_enabled;
         status["airpods_pause"] = to_string(config.airpods_pause);
         status["airpods_handoff"] = config.airpods_handoff;
@@ -445,6 +446,11 @@ namespace tether {
     void set_desktop_popups_enabled(bool enabled) { g_desktop_popups_enabled.store(enabled); }
 
     static std::atomic<bool> g_popup_previews_enabled{true};
+    static std::atomic<bool> g_message_popups_enabled{true};
+
+    bool message_popups_enabled() { return g_message_popups_enabled.load(); }
+
+    void set_message_popups_enabled(bool enabled) { g_message_popups_enabled.store(enabled); }
 
     bool popup_previews_enabled() { return g_popup_previews_enabled.load(); }
 
@@ -1494,6 +1500,12 @@ namespace tether {
                         config.desktop_popups_enabled = j.value("enabled", true);
                         bluetooth::save_config(config);
                         set_desktop_popups_enabled(config.desktop_popups_enabled);
+                        broadcast_local_event(build_bt_status().dump());
+                    } else if (j.contains("command") && j["command"] == "set_message_popups") {
+                        auto config = bluetooth::load_config();
+                        config.message_popups_enabled = j.value("enabled", true);
+                        bluetooth::save_config(config);
+                        set_message_popups_enabled(config.message_popups_enabled);
                         broadcast_local_event(build_bt_status().dump());
                     } else if (j.contains("command") && j["command"] == "set_popup_previews") {
                         auto config = bluetooth::load_config();

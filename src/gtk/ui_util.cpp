@@ -86,6 +86,10 @@ button.tether-nav-item:checked {
     padding: 0 2px;
 }
 
+.tether-pending .tether-bubble {
+    opacity: 0.6;
+}
+
 .tether-stamp {
     font-size: 78%;
     opacity: 0.55;

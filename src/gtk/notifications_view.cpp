@@ -17,6 +17,7 @@ namespace tether::ui {
             GtkWidget* list = nullptr;
             GtkWidget* stack = nullptr;
             GtkWidget* mute = nullptr;
+            GtkWidget* messages = nullptr;
             bool visible = false;
             bool ready = false;
         };
@@ -175,6 +176,14 @@ namespace tether::ui {
         return false;
     }
 
+    void notifications_view_set_message_popups(bool on) {
+        if (!g_notifications.messages || gtk_switch_get_active(GTK_SWITCH(g_notifications.messages)) == on)
+            return;
+        g_signal_handlers_block_matched(g_notifications.messages, G_SIGNAL_MATCH_DATA, 0, 0, nullptr, nullptr, &g_notifications);
+        gtk_switch_set_active(GTK_SWITCH(g_notifications.messages), on);
+        g_signal_handlers_unblock_matched(g_notifications.messages, G_SIGNAL_MATCH_DATA, 0, 0, nullptr, nullptr, &g_notifications);
+    }
+
     void notifications_view_set_muted(bool muted) {
         if (!g_notifications.mute || gtk_switch_get_active(GTK_SWITCH(g_notifications.mute)) == muted)
             return;
@@ -210,6 +219,30 @@ namespace tether::ui {
                          &g_notifications);
         gtk_box_pack_start(GTK_BOX(bar), g_notifications.mute, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(root), bar, FALSE, FALSE, 0);
+
+        GtkWidget* msg_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+        gtk_container_set_border_width(GTK_CONTAINER(msg_bar), 10);
+        GtkWidget* msg_labels = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+        GtkWidget* msg_title = gtk_label_new(nullptr);
+        gtk_label_set_markup(GTK_LABEL(msg_title), (std::string("<b>") + _("Message notifications") + "</b>").c_str());
+        gtk_label_set_xalign(GTK_LABEL(msg_title), 0.0);
+        gtk_box_pack_start(GTK_BOX(msg_labels), msg_title, FALSE, FALSE, 0);
+        GtkWidget* msg_hint = gtk_label_new(_("A popup for each new text. The unread count on the app icon stays either way."));
+        gtk_label_set_xalign(GTK_LABEL(msg_hint), 0.0);
+        gtk_style_context_add_class(gtk_widget_get_style_context(msg_hint), "muted");
+        gtk_box_pack_start(GTK_BOX(msg_labels), msg_hint, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(msg_bar), msg_labels, TRUE, TRUE, 0);
+        g_notifications.messages = gtk_switch_new();
+        gtk_switch_set_active(GTK_SWITCH(g_notifications.messages), TRUE);
+        gtk_widget_set_valign(g_notifications.messages, GTK_ALIGN_CENTER);
+        g_signal_connect(g_notifications.messages,
+                         "notify::active",
+                         G_CALLBACK(+[](GtkSwitch* sw, GParamSpec*, gpointer) {
+                             daemon_send({{"command", "set_message_popups"}, {"enabled", gtk_switch_get_active(sw) == TRUE}});
+                         }),
+                         &g_notifications);
+        gtk_box_pack_start(GTK_BOX(msg_bar), g_notifications.messages, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(root), msg_bar, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(root), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 0);
 
         g_notifications.stack = gtk_stack_new();
