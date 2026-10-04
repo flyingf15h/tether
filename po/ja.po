@@ -202,14 +202,14 @@ msgid "Hang up every call."
 msgstr "すべての通話を終了します。"
 
 #: src/cli/main.cpp
-#, fuzzy
 msgid ""
 "Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
 "PipeWire holding Hands-Free, calls answered or placed here play on this "
 "computer."
 msgstr ""
-"通話操作をオンまたはオフにします。通話は Bluetooth ハンズフリー経由で、音声"
-"は iPhone に残ります。"
+"通話の操作をオンまたはオフにします。通話はBluetoothハンズフリーを使います。"
+"PipeWireがハンズフリーを担当している場合、ここで応答・発信した通話はこのコン"
+"ピュータで再生されます。"
 
 #: src/cli/main.cpp
 msgid ""
@@ -1576,9 +1576,8 @@ msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "通話はここで操作し、音声は iPhone で再生されます。"
 
 #: src/core/src/bluetooth/telephony.cpp
-#, fuzzy
 msgid "Could not reach the audio server to mute the microphone."
-msgstr "デーモンから AirPods のバッテリーを読み取れませんでした。\n"
+msgstr "マイクをミュートするためのオーディオサーバーに接続できませんでした。"
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1727,22 +1726,20 @@ msgid "Open in {}"
 msgstr "{} で開く"
 
 #: src/daemon/notification.cpp
-#, fuzzy
 msgid "{} is calling"
-msgstr "発信中"
+msgstr "{} から着信"
 
 #: src/daemon/notification.cpp
 msgid "Phone"
-msgstr ""
+msgstr "電話"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Answer on laptop"
-msgstr ""
+msgstr "ノートPCで応答"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Answer on iPhone"
-msgstr "iPhone を接続"
+msgstr "iPhoneで応答"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Decline"
@@ -1750,7 +1747,7 @@ msgstr "拒否"
 
 #: src/gtk/calls_view.cpp
 msgid "Mute microphone"
-msgstr ""
+msgstr "マイクをミュート"
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1799,37 +1796,37 @@ msgid "Answer"
 msgstr "応答"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Audio on this computer"
-msgstr "通話音声はこのコンピューターで再生されます。"
+msgstr "このコンピュータで音声"
 
 #: src/gtk/calls_view.cpp
 msgid "To move it back, pick iPhone under Audio on the phone's call screen."
 msgstr ""
+"元に戻すには、iPhoneの通話画面の「オーディオ」で「iPhone」を選んでください。"
 
 #: src/gtk/calls_view.cpp
 msgid "Move to laptop"
-msgstr ""
+msgstr "ノートPCに切り替え"
 
 #: src/gtk/calls_view.cpp
 msgid "Play this call on the laptop's speakers and mic."
-msgstr ""
+msgstr "この通話にノートPCのスピーカーとマイクを使います。"
 
 #: src/gtk/calls_view.cpp
 msgid "Call volume and mute"
-msgstr ""
+msgstr "通話音量とミュート"
 
 #: src/gtk/calls_view.cpp
 msgid "Resume"
-msgstr ""
+msgstr "再開"
 
 #: src/gtk/calls_view.cpp
 msgid "Hold"
-msgstr ""
+msgstr "保留"
 
 #: src/gtk/calls_view.cpp
 msgid "Keypad"
-msgstr ""
+msgstr "キーパッド"
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1850,22 +1847,19 @@ msgstr "発信先の番号"
 
 #: src/gtk/calls_view.cpp
 msgid "Call from laptop"
-msgstr ""
+msgstr "ノートPCから発信"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on this computer."
-msgstr "通話音声はこのコンピューターで再生されます。"
+msgstr "このコンピュータの音声で発信します。"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Call on iPhone"
-msgstr "iPhone の通話を一覧表示します。"
+msgstr "iPhoneで発信"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on the iPhone."
-msgstr "iPhone から発信します。"
+msgstr "iPhoneの音声で発信します。"
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
@@ -1873,12 +1867,12 @@ msgstr "iPhone の通信事業者、電波、バッテリー。"
 
 #: src/gtk/calls_view.cpp
 msgid "Always use laptop for calls"
-msgstr ""
+msgstr "通話は常にノートPCを使う"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Every call plays on this computer, even ones answered on the iPhone."
-msgstr "通話音声をこのコンピューターに移す、または iPhone に戻します。"
+msgstr ""
+"iPhoneで応答した通話も含め、すべての通話をこのコンピュータで再生します。"
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -2519,14 +2513,13 @@ msgid "Sending…"
 msgstr "送信中…"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} reply"
 msgid_plural "{} replies"
-msgstr[0] "返信"
+msgstr[0] "返信 {} 件"
 
 #: src/gtk/messages_view.cpp
 msgid "Replying to {}"
-msgstr ""
+msgstr "{} に返信中"
 
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
@@ -2540,7 +2533,7 @@ msgstr "受信: {}"
 
 #: src/gtk/messages_view.cpp
 msgid "React"
-msgstr ""
+msgstr "リアクション"
 
 #: src/gtk/messages_view.cpp
 msgid "Sent"
@@ -2578,17 +2571,15 @@ msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "Reaction sent"
-msgstr ""
+msgstr "リアクションを送信しました"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "The reaction was not sent."
-msgstr "メッセージは送信されませんでした。"
+msgstr "リアクションを送信できませんでした。"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Message @{}"
-msgstr "{} にメッセージ"
+msgstr "@{} にメッセージ"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2607,13 +2598,12 @@ msgid "Phone number or email"
 msgstr "電話番号またはメールアドレス"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Cancel reply"
-msgstr "キャンセル"
+msgstr "返信をキャンセル"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
-msgstr ""
+msgstr "絵文字 (Ctrl+.)"
 
 #: src/gtk/messages_view.cpp
 msgid "Send"
@@ -2649,13 +2639,14 @@ msgid "Notification mirroring is unavailable."
 msgstr "通知のミラーリングは利用できません。"
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Mute notifications"
-msgstr "新しい通知"
+msgstr "通知をミュート"
 
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
+"メッセージやiPhoneアプリのデスクトップ通知を表示しません。着信は引き続き鳴り"
+"ます。"
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2912,11 +2903,3 @@ msgstr "iPhone;iOS;SMS;メッセージ;クリップボード;ファイル;通知
 
 #~ msgid "Move audio to iPhone"
 #~ msgstr "音声を iPhone に移す"
-
-#, fuzzy
-#~ msgid "Tether version"
-#~ msgstr "tether のバージョンを表示します。"
-
-#, fuzzy
-#~ msgid "on"
-#~ msgstr "ボンド"

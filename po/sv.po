@@ -202,14 +202,14 @@ msgid "Hang up every call."
 msgstr "Lägg på alla samtal."
 
 #: src/cli/main.cpp
-#, fuzzy
 msgid ""
 "Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
 "PipeWire holding Hands-Free, calls answered or placed here play on this "
 "computer."
 msgstr ""
-"Slå på eller av samtalsstyrning. Samtal går via Bluetooth-handsfree; ljudet "
-"stannar på iPhone."
+"Slå på eller av samtalsstyrning. Samtal går via Bluetooth Handsfree. När "
+"PipeWire hanterar Handsfree spelas samtal som besvaras eller rings här upp "
+"på den här datorn."
 
 #: src/cli/main.cpp
 msgid ""
@@ -1585,9 +1585,8 @@ msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "Samtal styrs härifrån; ljudet spelas upp på iPhone."
 
 #: src/core/src/bluetooth/telephony.cpp
-#, fuzzy
 msgid "Could not reach the audio server to mute the microphone."
-msgstr "Kunde inte läsa AirPods batterinivå från demonen.\n"
+msgstr "Kunde inte nå ljudservern för att stänga av mikrofonen."
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1733,22 +1732,20 @@ msgid "Open in {}"
 msgstr "Öppna i {}"
 
 #: src/daemon/notification.cpp
-#, fuzzy
 msgid "{} is calling"
-msgstr "Ringer upp"
+msgstr "{} ringer"
 
 #: src/daemon/notification.cpp
 msgid "Phone"
-msgstr ""
+msgstr "Telefon"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Answer on laptop"
-msgstr ""
+msgstr "Svara på datorn"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Answer on iPhone"
-msgstr "Anslut din iPhone"
+msgstr "Svara på iPhone"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Decline"
@@ -1756,7 +1753,7 @@ msgstr "Avvisa"
 
 #: src/gtk/calls_view.cpp
 msgid "Mute microphone"
-msgstr ""
+msgstr "Stäng av mikrofonen"
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1805,37 +1802,38 @@ msgid "Answer"
 msgstr "Svara"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Audio on this computer"
-msgstr "Samtalsljudet kommer till den här datorn."
+msgstr "Ljud på den här datorn"
 
 #: src/gtk/calls_view.cpp
 msgid "To move it back, pick iPhone under Audio on the phone's call screen."
 msgstr ""
+"Välj iPhone under Ljud på telefonens samtalsskärm för att flytta tillbaka "
+"det."
 
 #: src/gtk/calls_view.cpp
 msgid "Move to laptop"
-msgstr ""
+msgstr "Flytta till datorn"
 
 #: src/gtk/calls_view.cpp
 msgid "Play this call on the laptop's speakers and mic."
-msgstr ""
+msgstr "Använd datorns högtalare och mikrofon för det här samtalet."
 
 #: src/gtk/calls_view.cpp
 msgid "Call volume and mute"
-msgstr ""
+msgstr "Samtalsvolym och ljud av"
 
 #: src/gtk/calls_view.cpp
 msgid "Resume"
-msgstr ""
+msgstr "Återuppta"
 
 #: src/gtk/calls_view.cpp
 msgid "Hold"
-msgstr ""
+msgstr "Parkera"
 
 #: src/gtk/calls_view.cpp
 msgid "Keypad"
-msgstr ""
+msgstr "Knappsats"
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1855,22 +1853,19 @@ msgstr "Nummer att ringa"
 
 #: src/gtk/calls_view.cpp
 msgid "Call from laptop"
-msgstr ""
+msgstr "Ring från datorn"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on this computer."
-msgstr "Samtalsljudet kommer till den här datorn."
+msgstr "Ring samtalet med ljudet på den här datorn."
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Call on iPhone"
-msgstr "Lista samtal på iPhone."
+msgstr "Ring med iPhone"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on the iPhone."
-msgstr "Ring ett samtal från iPhone."
+msgstr "Ring samtalet med ljudet på iPhone."
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
@@ -1878,12 +1873,12 @@ msgstr "iPhones operatör, signal och batteri."
 
 #: src/gtk/calls_view.cpp
 msgid "Always use laptop for calls"
-msgstr ""
+msgstr "Använd alltid datorn för samtal"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Every call plays on this computer, even ones answered on the iPhone."
-msgstr "Flytta samtalsljudet till den här datorn, eller tillbaka till iPhone."
+msgstr ""
+"Alla samtal spelas upp på den här datorn, även de som besvaras på iPhone."
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -2527,15 +2522,14 @@ msgid "Sending…"
 msgstr "Skickar…"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} reply"
 msgid_plural "{} replies"
-msgstr[0] "Svara"
-msgstr[1] "Svara"
+msgstr[0] "{} svar"
+msgstr[1] "{} svar"
 
 #: src/gtk/messages_view.cpp
 msgid "Replying to {}"
-msgstr ""
+msgstr "Svarar {}"
 
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
@@ -2549,7 +2543,7 @@ msgstr "Mottaget: {}"
 
 #: src/gtk/messages_view.cpp
 msgid "React"
-msgstr ""
+msgstr "Reagera"
 
 #: src/gtk/messages_view.cpp
 msgid "Sent"
@@ -2585,17 +2579,15 @@ msgstr "Kunde inte nå Tether-demonen; meddelandet skickades inte."
 
 #: src/gtk/messages_view.cpp
 msgid "Reaction sent"
-msgstr ""
+msgstr "Reaktion skickad"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "The reaction was not sent."
-msgstr "Meddelandet skickades inte."
+msgstr "Reaktionen skickades inte."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Message @{}"
-msgstr "Skicka meddelande till {}"
+msgstr "Meddelande till @{}"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2614,13 +2606,12 @@ msgid "Phone number or email"
 msgstr "Telefonnummer eller e-post"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Cancel reply"
-msgstr "Avbryt"
+msgstr "Avbryt svar"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
-msgstr ""
+msgstr "Emoji (Ctrl+.)"
 
 #: src/gtk/messages_view.cpp
 msgid "Send"
@@ -2656,13 +2647,14 @@ msgid "Notification mirroring is unavailable."
 msgstr "Spegling av aviseringar är otillgänglig."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Mute notifications"
-msgstr "Ny avisering"
+msgstr "Stäng av aviseringar"
 
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
+"Inga popup-fönster för meddelanden eller iPhone-appar. Samtal ringer "
+"fortfarande."
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2920,11 +2912,3 @@ msgstr "iPhone;iOS;SMS;Meddelanden;Urklipp;Filer;Notiser;Samtal;AirPods;"
 
 #~ msgid "Move audio to iPhone"
 #~ msgstr "Flytta ljudet till iPhone"
-
-#, fuzzy
-#~ msgid "Tether version"
-#~ msgstr "Visa tether-versionen."
-
-#, fuzzy
-#~ msgid "on"
-#~ msgstr "Bindning"

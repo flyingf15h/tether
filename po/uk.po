@@ -204,14 +204,14 @@ msgid "Hang up every call."
 msgstr "Завершити всі виклики."
 
 #: src/cli/main.cpp
-#, fuzzy
 msgid ""
 "Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
 "PipeWire holding Hands-Free, calls answered or placed here play on this "
 "computer."
 msgstr ""
-"Увімкнути або вимкнути керування викликами. Виклики йдуть через Bluetooth "
-"Hands-Free; звук залишається на iPhone."
+"Увімкнути або вимкнути керування дзвінками. Дзвінки йдуть через Bluetooth "
+"Hands-Free. Якщо Hands-Free обслуговує PipeWire, дзвінки, прийняті або "
+"здійснені тут, звучать на цьому комп’ютері."
 
 #: src/cli/main.cpp
 msgid ""
@@ -1596,9 +1596,8 @@ msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "Викликами керують звідси; звук відтворюється на iPhone."
 
 #: src/core/src/bluetooth/telephony.cpp
-#, fuzzy
 msgid "Could not reach the audio server to mute the microphone."
-msgstr "Не вдалося отримати заряд AirPods від служби.\n"
+msgstr "Не вдалося зв’язатися з аудіосервером, щоб вимкнути мікрофон."
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1745,22 +1744,20 @@ msgid "Open in {}"
 msgstr "Відкрити в {}"
 
 #: src/daemon/notification.cpp
-#, fuzzy
 msgid "{} is calling"
-msgstr "Набір"
+msgstr "{} дзвонить"
 
 #: src/daemon/notification.cpp
 msgid "Phone"
-msgstr ""
+msgstr "Телефон"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Answer on laptop"
-msgstr ""
+msgstr "Відповісти на ноутбуці"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Answer on iPhone"
-msgstr "Під'єднайте свій iPhone"
+msgstr "Відповісти на iPhone"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Decline"
@@ -1768,7 +1765,7 @@ msgstr "Відхилити"
 
 #: src/gtk/calls_view.cpp
 msgid "Mute microphone"
-msgstr ""
+msgstr "Вимкнути мікрофон"
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1817,37 +1814,38 @@ msgid "Answer"
 msgstr "Відповісти"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Audio on this computer"
-msgstr "Звук дзвінка йде на цей комп'ютер."
+msgstr "Звук на цьому комп’ютері"
 
 #: src/gtk/calls_view.cpp
 msgid "To move it back, pick iPhone under Audio on the phone's call screen."
 msgstr ""
+"Щоб повернути звук, виберіть iPhone у розділі «Аудіо» на екрані виклику "
+"телефона."
 
 #: src/gtk/calls_view.cpp
 msgid "Move to laptop"
-msgstr ""
+msgstr "Перенести на ноутбук"
 
 #: src/gtk/calls_view.cpp
 msgid "Play this call on the laptop's speakers and mic."
-msgstr ""
+msgstr "Використовувати динаміки й мікрофон ноутбука для цього дзвінка."
 
 #: src/gtk/calls_view.cpp
 msgid "Call volume and mute"
-msgstr ""
+msgstr "Гучність і мікрофон дзвінка"
 
 #: src/gtk/calls_view.cpp
 msgid "Resume"
-msgstr ""
+msgstr "Відновити"
 
 #: src/gtk/calls_view.cpp
 msgid "Hold"
-msgstr ""
+msgstr "Утримати"
 
 #: src/gtk/calls_view.cpp
 msgid "Keypad"
-msgstr ""
+msgstr "Клавіатура"
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1869,22 +1867,19 @@ msgstr "Номер для виклику"
 
 #: src/gtk/calls_view.cpp
 msgid "Call from laptop"
-msgstr ""
+msgstr "Подзвонити з ноутбука"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on this computer."
-msgstr "Звук дзвінка йде на цей комп'ютер."
+msgstr "Подзвонити зі звуком на цьому комп’ютері."
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Call on iPhone"
-msgstr "Показати виклики на iPhone."
+msgstr "Подзвонити з iPhone"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on the iPhone."
-msgstr "Здійснити виклик з iPhone."
+msgstr "Подзвонити зі звуком на iPhone."
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
@@ -1892,12 +1887,11 @@ msgstr "Оператор, сигнал і батарея iPhone."
 
 #: src/gtk/calls_view.cpp
 msgid "Always use laptop for calls"
-msgstr ""
+msgstr "Завжди використовувати ноутбук для дзвінків"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Every call plays on this computer, even ones answered on the iPhone."
-msgstr "Перевести звук виклику на цей комп’ютер або назад на iPhone."
+msgstr "Усі дзвінки звучать на цьому комп’ютері, навіть прийняті на iPhone."
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -2544,16 +2538,15 @@ msgid "Sending…"
 msgstr "Надсилання…"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} reply"
 msgid_plural "{} replies"
-msgstr[0] "Відповісти"
-msgstr[1] "Відповісти"
-msgstr[2] "Відповісти"
+msgstr[0] "{} відповідь"
+msgstr[1] "{} відповіді"
+msgstr[2] "{} відповідей"
 
 #: src/gtk/messages_view.cpp
 msgid "Replying to {}"
-msgstr ""
+msgstr "Відповідь для {}"
 
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
@@ -2567,7 +2560,7 @@ msgstr "Отримано: {}"
 
 #: src/gtk/messages_view.cpp
 msgid "React"
-msgstr ""
+msgstr "Реакція"
 
 #: src/gtk/messages_view.cpp
 msgid "Sent"
@@ -2604,17 +2597,15 @@ msgstr "Не вдалося зв'язатися з демоном Tether; пов
 
 #: src/gtk/messages_view.cpp
 msgid "Reaction sent"
-msgstr ""
+msgstr "Реакцію надіслано"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "The reaction was not sent."
-msgstr "Повідомлення не надіслано."
+msgstr "Реакцію не надіслано."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Message @{}"
-msgstr "Написати {}"
+msgstr "Повідомлення для @{}"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2633,13 +2624,12 @@ msgid "Phone number or email"
 msgstr "Номер телефону або ел. пошта"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Cancel reply"
-msgstr "Скасувати"
+msgstr "Скасувати відповідь"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
-msgstr ""
+msgstr "Емодзі (Ctrl+.)"
 
 #: src/gtk/messages_view.cpp
 msgid "Send"
@@ -2675,13 +2665,14 @@ msgid "Notification mirroring is unavailable."
 msgstr "Дублювання сповіщень недоступне."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Mute notifications"
-msgstr "Нове сповіщення"
+msgstr "Вимкнути сповіщення"
 
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
+"Без спливних вікон для повідомлень і застосунків iPhone. Вхідні дзвінки й "
+"надалі звучатимуть."
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2942,11 +2933,3 @@ msgstr ""
 
 #~ msgid "Move audio to iPhone"
 #~ msgstr "Перевести звук на iPhone"
-
-#, fuzzy
-#~ msgid "Tether version"
-#~ msgstr "Показати версію tether."
-
-#, fuzzy
-#~ msgid "on"
-#~ msgstr "Зв'язок"

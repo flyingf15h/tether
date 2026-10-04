@@ -200,14 +200,13 @@ msgid "Hang up every call."
 msgstr "모든 통화를 종료합니다."
 
 #: src/cli/main.cpp
-#, fuzzy
 msgid ""
 "Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
 "PipeWire holding Hands-Free, calls answered or placed here play on this "
 "computer."
 msgstr ""
-"통화 제어를 켜거나 끕니다. 통화는 Bluetooth 핸즈프리를 사용하며 오디오는 "
-"iPhone에 남습니다."
+"통화 제어를 켜거나 끕니다. 통화는 Bluetooth 핸즈프리로 연결됩니다. PipeWire"
+"가 핸즈프리를 맡으면 여기서 받거나 건 통화가 이 컴퓨터에서 재생됩니다."
 
 #: src/cli/main.cpp
 msgid ""
@@ -1556,9 +1555,8 @@ msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "통화는 여기서 제어하고 오디오는 iPhone에서 재생됩니다."
 
 #: src/core/src/bluetooth/telephony.cpp
-#, fuzzy
 msgid "Could not reach the audio server to mute the microphone."
-msgstr "데몬에서 AirPods 배터리를 읽을 수 없습니다.\n"
+msgstr "마이크를 음소거하기 위해 오디오 서버에 연결할 수 없습니다."
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1705,22 +1703,20 @@ msgid "Open in {}"
 msgstr "{}에서 열기"
 
 #: src/daemon/notification.cpp
-#, fuzzy
 msgid "{} is calling"
-msgstr "발신 중"
+msgstr "{}에게서 전화가 왔습니다"
 
 #: src/daemon/notification.cpp
 msgid "Phone"
-msgstr ""
+msgstr "전화"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Answer on laptop"
-msgstr ""
+msgstr "노트북에서 받기"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Answer on iPhone"
-msgstr "iPhone 연결하기"
+msgstr "iPhone에서 받기"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Decline"
@@ -1728,7 +1724,7 @@ msgstr "거절"
 
 #: src/gtk/calls_view.cpp
 msgid "Mute microphone"
-msgstr ""
+msgstr "마이크 음소거"
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1777,37 +1773,36 @@ msgid "Answer"
 msgstr "받기"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Audio on this computer"
-msgstr "통화 음성이 이 컴퓨터로 옵니다."
+msgstr "이 컴퓨터에서 오디오"
 
 #: src/gtk/calls_view.cpp
 msgid "To move it back, pick iPhone under Audio on the phone's call screen."
-msgstr ""
+msgstr "되돌리려면 iPhone 통화 화면의 오디오에서 iPhone을 선택하세요."
 
 #: src/gtk/calls_view.cpp
 msgid "Move to laptop"
-msgstr ""
+msgstr "노트북으로 전환"
 
 #: src/gtk/calls_view.cpp
 msgid "Play this call on the laptop's speakers and mic."
-msgstr ""
+msgstr "이 통화에 노트북의 스피커와 마이크를 사용합니다."
 
 #: src/gtk/calls_view.cpp
 msgid "Call volume and mute"
-msgstr ""
+msgstr "통화 음량 및 음소거"
 
 #: src/gtk/calls_view.cpp
 msgid "Resume"
-msgstr ""
+msgstr "재개"
 
 #: src/gtk/calls_view.cpp
 msgid "Hold"
-msgstr ""
+msgstr "대기"
 
 #: src/gtk/calls_view.cpp
 msgid "Keypad"
-msgstr ""
+msgstr "키패드"
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1827,22 +1822,19 @@ msgstr "전화를 걸 번호"
 
 #: src/gtk/calls_view.cpp
 msgid "Call from laptop"
-msgstr ""
+msgstr "노트북에서 전화 걸기"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on this computer."
-msgstr "통화 음성이 이 컴퓨터로 옵니다."
+msgstr "이 컴퓨터의 오디오로 전화를 겁니다."
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Call on iPhone"
-msgstr "iPhone의 통화를 나열합니다."
+msgstr "iPhone으로 전화 걸기"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on the iPhone."
-msgstr "iPhone에서 전화를 겁니다."
+msgstr "iPhone의 오디오로 전화를 겁니다."
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
@@ -1850,12 +1842,11 @@ msgstr "iPhone의 통신사, 신호, 배터리입니다."
 
 #: src/gtk/calls_view.cpp
 msgid "Always use laptop for calls"
-msgstr ""
+msgstr "항상 노트북으로 통화"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Every call plays on this computer, even ones answered on the iPhone."
-msgstr "통화 오디오를 이 컴퓨터로 옮기거나 iPhone으로 되돌립니다."
+msgstr "iPhone에서 받은 통화를 포함해 모든 통화를 이 컴퓨터에서 재생합니다."
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -2491,14 +2482,13 @@ msgid "Sending…"
 msgstr "보내는 중…"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} reply"
 msgid_plural "{} replies"
-msgstr[0] "답장"
+msgstr[0] "답장 {}개"
 
 #: src/gtk/messages_view.cpp
 msgid "Replying to {}"
-msgstr ""
+msgstr "{}에게 답장 중"
 
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
@@ -2512,7 +2502,7 @@ msgstr "받음: {}"
 
 #: src/gtk/messages_view.cpp
 msgid "React"
-msgstr ""
+msgstr "반응"
 
 #: src/gtk/messages_view.cpp
 msgid "Sent"
@@ -2548,17 +2538,15 @@ msgstr "Tether 데몬에 연결하지 못했습니다. 메시지가 전송되지
 
 #: src/gtk/messages_view.cpp
 msgid "Reaction sent"
-msgstr ""
+msgstr "반응을 보냈습니다"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "The reaction was not sent."
-msgstr "메시지가 전송되지 않았습니다."
+msgstr "반응을 보내지 못했습니다."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Message @{}"
-msgstr "{}에 메시지 보내기"
+msgstr "@{}에게 메시지"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2577,13 +2565,12 @@ msgid "Phone number or email"
 msgstr "전화번호 또는 이메일"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Cancel reply"
-msgstr "취소"
+msgstr "답장 취소"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
-msgstr ""
+msgstr "이모지 (Ctrl+.)"
 
 #: src/gtk/messages_view.cpp
 msgid "Send"
@@ -2619,13 +2606,13 @@ msgid "Notification mirroring is unavailable."
 msgstr "알림 미러링을 사용할 수 없습니다."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Mute notifications"
-msgstr "새 알림"
+msgstr "알림 음소거"
 
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
+"메시지나 iPhone 앱의 데스크톱 팝업을 표시하지 않습니다. 전화는 계속 울립니다."
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2879,11 +2866,3 @@ msgstr "iPhone;iOS;SMS;메시지;클립보드;파일;알림;통화;AirPods;"
 
 #~ msgid "Move audio to iPhone"
 #~ msgstr "오디오를 iPhone으로 옮기기"
-
-#, fuzzy
-#~ msgid "Tether version"
-#~ msgstr "tether 버전을 표시합니다."
-
-#, fuzzy
-#~ msgid "on"
-#~ msgstr "본드"

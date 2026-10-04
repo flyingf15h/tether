@@ -195,12 +195,13 @@ msgid "Hang up every call."
 msgstr "挂断所有通话。"
 
 #: src/cli/main.cpp
-#, fuzzy
 msgid ""
 "Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
 "PipeWire holding Hands-Free, calls answered or placed here play on this "
 "computer."
-msgstr "开启或关闭通话控制。通话通过蓝牙免提进行，音频保留在 iPhone 上。"
+msgstr ""
+"打开或关闭通话控制。通话通过蓝牙免提进行。当 PipeWire 负责免提时，在此接听或"
+"拨出的通话会在这台电脑上播放。"
 
 #: src/cli/main.cpp
 msgid ""
@@ -1516,9 +1517,8 @@ msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "通话在此控制，音频在 iPhone 上播放。"
 
 #: src/core/src/bluetooth/telephony.cpp
-#, fuzzy
 msgid "Could not reach the audio server to mute the microphone."
-msgstr "无法从守护进程读取 AirPods 电量。\n"
+msgstr "无法连接音频服务器来静音麦克风。"
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1663,22 +1663,20 @@ msgid "Open in {}"
 msgstr "在 {} 中打开"
 
 #: src/daemon/notification.cpp
-#, fuzzy
 msgid "{} is calling"
-msgstr "拨号中"
+msgstr "{} 来电"
 
 #: src/daemon/notification.cpp
 msgid "Phone"
-msgstr ""
+msgstr "电话"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Answer on laptop"
-msgstr ""
+msgstr "在笔记本上接听"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Answer on iPhone"
-msgstr "连接你的 iPhone"
+msgstr "在 iPhone 上接听"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Decline"
@@ -1686,7 +1684,7 @@ msgstr "拒接"
 
 #: src/gtk/calls_view.cpp
 msgid "Mute microphone"
-msgstr ""
+msgstr "静音麦克风"
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1735,37 +1733,36 @@ msgid "Answer"
 msgstr "接听"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Audio on this computer"
-msgstr "通话声音转到这台电脑。"
+msgstr "在这台电脑上播放音频"
 
 #: src/gtk/calls_view.cpp
 msgid "To move it back, pick iPhone under Audio on the phone's call screen."
-msgstr ""
+msgstr "要移回去，请在手机通话界面的“音频”中选择 iPhone。"
 
 #: src/gtk/calls_view.cpp
 msgid "Move to laptop"
-msgstr ""
+msgstr "移到笔记本"
 
 #: src/gtk/calls_view.cpp
 msgid "Play this call on the laptop's speakers and mic."
-msgstr ""
+msgstr "此通话使用笔记本的扬声器和麦克风。"
 
 #: src/gtk/calls_view.cpp
 msgid "Call volume and mute"
-msgstr ""
+msgstr "通话音量和静音"
 
 #: src/gtk/calls_view.cpp
 msgid "Resume"
-msgstr ""
+msgstr "恢复"
 
 #: src/gtk/calls_view.cpp
 msgid "Hold"
-msgstr ""
+msgstr "保持"
 
 #: src/gtk/calls_view.cpp
 msgid "Keypad"
-msgstr ""
+msgstr "拨号键盘"
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1785,22 +1782,19 @@ msgstr "要拨打的号码"
 
 #: src/gtk/calls_view.cpp
 msgid "Call from laptop"
-msgstr ""
+msgstr "从笔记本拨打"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on this computer."
-msgstr "通话声音转到这台电脑。"
+msgstr "拨打电话，音频在这台电脑上。"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Call on iPhone"
-msgstr "列出 iPhone 上的通话。"
+msgstr "用 iPhone 拨打"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on the iPhone."
-msgstr "从 iPhone 拨打电话。"
+msgstr "拨打电话，音频在 iPhone 上。"
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
@@ -1808,12 +1802,11 @@ msgstr "iPhone 的运营商、信号和电量。"
 
 #: src/gtk/calls_view.cpp
 msgid "Always use laptop for calls"
-msgstr ""
+msgstr "始终使用笔记本通话"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Every call plays on this computer, even ones answered on the iPhone."
-msgstr "将通话音频转到本机，或转回 iPhone。"
+msgstr "所有通话都在这台电脑上播放，包括在 iPhone 上接听的通话。"
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -2441,14 +2434,13 @@ msgid "Sending…"
 msgstr "正在发送……"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} reply"
 msgid_plural "{} replies"
-msgstr[0] "回复"
+msgstr[0] "{} 条回复"
 
 #: src/gtk/messages_view.cpp
 msgid "Replying to {}"
-msgstr ""
+msgstr "回复 {}"
 
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
@@ -2462,7 +2454,7 @@ msgstr "已收到：{}"
 
 #: src/gtk/messages_view.cpp
 msgid "React"
-msgstr ""
+msgstr "回应"
 
 #: src/gtk/messages_view.cpp
 msgid "Sent"
@@ -2498,17 +2490,15 @@ msgstr "无法连接到 Tether 守护进程；信息未发送。"
 
 #: src/gtk/messages_view.cpp
 msgid "Reaction sent"
-msgstr ""
+msgstr "已发送回应"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "The reaction was not sent."
-msgstr "信息未发送。"
+msgstr "回应未发送。"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Message @{}"
-msgstr "给 {} 发信息"
+msgstr "发消息给 @{}"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2527,13 +2517,12 @@ msgid "Phone number or email"
 msgstr "电话号码或电子邮件"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Cancel reply"
-msgstr "取消"
+msgstr "取消回复"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
-msgstr ""
+msgstr "表情 (Ctrl+.)"
 
 #: src/gtk/messages_view.cpp
 msgid "Send"
@@ -2569,13 +2558,12 @@ msgid "Notification mirroring is unavailable."
 msgstr "通知镜像不可用。"
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Mute notifications"
-msgstr "新通知"
+msgstr "静音通知"
 
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
-msgstr ""
+msgstr "不为信息或 iPhone 应用显示桌面弹窗。来电仍会响铃。"
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2815,11 +2803,3 @@ msgstr "iPhone;iOS;SMS;信息;剪贴板;文件;通知;通话;AirPods;"
 
 #~ msgid "Move audio to iPhone"
 #~ msgstr "将音频转到 iPhone"
-
-#, fuzzy
-#~ msgid "Tether version"
-#~ msgstr "显示 tether 版本。"
-
-#, fuzzy
-#~ msgid "on"
-#~ msgstr "绑定"

@@ -205,14 +205,14 @@ msgid "Hang up every call."
 msgstr "Chiudere tutte le chiamate."
 
 #: src/cli/main.cpp
-#, fuzzy
 msgid ""
 "Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
 "PipeWire holding Hands-Free, calls answered or placed here play on this "
 "computer."
 msgstr ""
-"Attivare o disattivare il controllo delle chiamate. Le chiamate usano il "
-"vivavoce Bluetooth; l'audio resta sull'iPhone."
+"Attiva o disattiva il controllo delle chiamate. Le chiamate passano per "
+"Bluetooth Vivavoce. Se PipeWire gestisce il Vivavoce, le chiamate risposte o "
+"fatte qui si sentono su questo computer."
 
 #: src/cli/main.cpp
 msgid ""
@@ -1607,9 +1607,8 @@ msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "Le chiamate si controllano qui; l'audio viene riprodotto sull'iPhone."
 
 #: src/core/src/bluetooth/telephony.cpp
-#, fuzzy
 msgid "Could not reach the audio server to mute the microphone."
-msgstr "Impossibile leggere la batteria degli AirPods dal demone.\n"
+msgstr "Impossibile raggiungere il server audio per disattivare il microfono."
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1757,22 +1756,20 @@ msgid "Open in {}"
 msgstr "Apri in {}"
 
 #: src/daemon/notification.cpp
-#, fuzzy
 msgid "{} is calling"
-msgstr "Composizione"
+msgstr "{} sta chiamando"
 
 #: src/daemon/notification.cpp
 msgid "Phone"
-msgstr ""
+msgstr "Telefono"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Answer on laptop"
-msgstr ""
+msgstr "Rispondi sul portatile"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Answer on iPhone"
-msgstr "Connetti il tuo iPhone"
+msgstr "Rispondi sull’iPhone"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Decline"
@@ -1780,7 +1777,7 @@ msgstr "Rifiuta"
 
 #: src/gtk/calls_view.cpp
 msgid "Mute microphone"
-msgstr ""
+msgstr "Disattiva microfono"
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1829,37 +1826,38 @@ msgid "Answer"
 msgstr "Rispondi"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Audio on this computer"
-msgstr "L'audio della chiamata passa a questo computer."
+msgstr "Audio su questo computer"
 
 #: src/gtk/calls_view.cpp
 msgid "To move it back, pick iPhone under Audio on the phone's call screen."
 msgstr ""
+"Per riportarla indietro, scegli iPhone in Audio nella schermata di chiamata "
+"del telefono."
 
 #: src/gtk/calls_view.cpp
 msgid "Move to laptop"
-msgstr ""
+msgstr "Sposta sul portatile"
 
 #: src/gtk/calls_view.cpp
 msgid "Play this call on the laptop's speakers and mic."
-msgstr ""
+msgstr "Usa altoparlanti e microfono del portatile per questa chiamata."
 
 #: src/gtk/calls_view.cpp
 msgid "Call volume and mute"
-msgstr ""
+msgstr "Volume e microfono della chiamata"
 
 #: src/gtk/calls_view.cpp
 msgid "Resume"
-msgstr ""
+msgstr "Riprendi"
 
 #: src/gtk/calls_view.cpp
 msgid "Hold"
-msgstr ""
+msgstr "Metti in attesa"
 
 #: src/gtk/calls_view.cpp
 msgid "Keypad"
-msgstr ""
+msgstr "Tastierino"
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1881,22 +1879,19 @@ msgstr "Numero da chiamare"
 
 #: src/gtk/calls_view.cpp
 msgid "Call from laptop"
-msgstr ""
+msgstr "Chiama dal portatile"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on this computer."
-msgstr "L'audio della chiamata passa a questo computer."
+msgstr "Effettua la chiamata con l’audio su questo computer."
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Call on iPhone"
-msgstr "Elencare le chiamate sull'iPhone."
+msgstr "Chiama con l’iPhone"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on the iPhone."
-msgstr "Effettuare una chiamata dall'iPhone."
+msgstr "Effettua la chiamata con l’audio sull’iPhone."
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
@@ -1904,13 +1899,12 @@ msgstr "Operatore, segnale e batteria dell'iPhone."
 
 #: src/gtk/calls_view.cpp
 msgid "Always use laptop for calls"
-msgstr ""
+msgstr "Usa sempre il portatile per le chiamate"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Every call plays on this computer, even ones answered on the iPhone."
 msgstr ""
-"Spostare l'audio della chiamata su questo computer, o di nuovo sull'iPhone."
+"Ogni chiamata passa da questo computer, anche quelle risposte sull’iPhone."
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -2560,15 +2554,14 @@ msgid "Sending…"
 msgstr "Invio…"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} reply"
 msgid_plural "{} replies"
-msgstr[0] "Rispondi"
-msgstr[1] "Rispondi"
+msgstr[0] "{} risposta"
+msgstr[1] "{} risposte"
 
 #: src/gtk/messages_view.cpp
 msgid "Replying to {}"
-msgstr ""
+msgstr "Risposta a {}"
 
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
@@ -2582,7 +2575,7 @@ msgstr "Ricevuto: {}"
 
 #: src/gtk/messages_view.cpp
 msgid "React"
-msgstr ""
+msgstr "Reagisci"
 
 #: src/gtk/messages_view.cpp
 msgid "Sent"
@@ -2621,17 +2614,15 @@ msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "Reaction sent"
-msgstr ""
+msgstr "Reazione inviata"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "The reaction was not sent."
-msgstr "Il messaggio non è stato inviato."
+msgstr "La reazione non è stata inviata."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Message @{}"
-msgstr "Invia messaggio a {}"
+msgstr "Messaggio a @{}"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2650,13 +2641,12 @@ msgid "Phone number or email"
 msgstr "Numero di telefono o email"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Cancel reply"
-msgstr "Annulla"
+msgstr "Annulla risposta"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
-msgstr ""
+msgstr "Emoji (Ctrl+.)"
 
 #: src/gtk/messages_view.cpp
 msgid "Send"
@@ -2692,13 +2682,14 @@ msgid "Notification mirroring is unavailable."
 msgstr "Il mirroring delle notifiche non è disponibile."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Mute notifications"
-msgstr "Nuova notifica"
+msgstr "Silenzia notifiche"
 
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
+"Nessun popup sul desktop per messaggi o app dell’iPhone. Le chiamate "
+"squillano comunque."
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2960,11 +2951,3 @@ msgstr "iPhone;iOS;SMS;Messaggi;Appunti;File;Notifiche;Chiamate;AirPods;"
 
 #~ msgid "Move audio to iPhone"
 #~ msgstr "Sposta l'audio sull'iPhone"
-
-#, fuzzy
-#~ msgid "Tether version"
-#~ msgstr "Mostra la versione di tether."
-
-#, fuzzy
-#~ msgid "on"
-#~ msgstr "Associazione"

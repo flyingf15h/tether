@@ -201,14 +201,14 @@ msgid "Hang up every call."
 msgstr "Tüm çağrıları sonlandır."
 
 #: src/cli/main.cpp
-#, fuzzy
 msgid ""
 "Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
 "PipeWire holding Hands-Free, calls answered or placed here play on this "
 "computer."
 msgstr ""
-"Çağrı denetimini aç veya kapat. Çağrılar Bluetooth eller serbest üzerinden "
-"gider; ses iPhone’da kalır."
+"Arama denetimini aç veya kapat. Aramalar Bluetooth Eller Serbest üzerinden "
+"yapılır. Eller Serbest’i PipeWire yönetiyorsa, burada yanıtlanan veya "
+"yapılan aramalar bu bilgisayarda çalar."
 
 #: src/cli/main.cpp
 msgid ""
@@ -1584,9 +1584,8 @@ msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "Çağrılar buradan yönetilir; ses iPhone’da çalar."
 
 #: src/core/src/bluetooth/telephony.cpp
-#, fuzzy
 msgid "Could not reach the audio server to mute the microphone."
-msgstr "AirPods pil durumu arka plan hizmetinden okunamadı.\n"
+msgstr "Mikrofonu sessize almak için ses sunucusuna ulaşılamadı."
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1732,22 +1731,20 @@ msgid "Open in {}"
 msgstr "{} ile aç"
 
 #: src/daemon/notification.cpp
-#, fuzzy
 msgid "{} is calling"
-msgstr "Aranıyor"
+msgstr "{} arıyor"
 
 #: src/daemon/notification.cpp
 msgid "Phone"
-msgstr ""
+msgstr "Telefon"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Answer on laptop"
-msgstr ""
+msgstr "Dizüstünde yanıtla"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Answer on iPhone"
-msgstr "iPhone'unuzu bağlayın"
+msgstr "iPhone’da yanıtla"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Decline"
@@ -1755,7 +1752,7 @@ msgstr "Reddet"
 
 #: src/gtk/calls_view.cpp
 msgid "Mute microphone"
-msgstr ""
+msgstr "Mikrofonu sessize al"
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1804,37 +1801,36 @@ msgid "Answer"
 msgstr "Yanıtla"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Audio on this computer"
-msgstr "Çağrı sesi bu bilgisayara geliyor."
+msgstr "Ses bu bilgisayarda"
 
 #: src/gtk/calls_view.cpp
 msgid "To move it back, pick iPhone under Audio on the phone's call screen."
-msgstr ""
+msgstr "Geri almak için telefonun arama ekranında Ses altında iPhone’u seçin."
 
 #: src/gtk/calls_view.cpp
 msgid "Move to laptop"
-msgstr ""
+msgstr "Dizüstüne taşı"
 
 #: src/gtk/calls_view.cpp
 msgid "Play this call on the laptop's speakers and mic."
-msgstr ""
+msgstr "Bu aramada dizüstünün hoparlörünü ve mikrofonunu kullan."
 
 #: src/gtk/calls_view.cpp
 msgid "Call volume and mute"
-msgstr ""
+msgstr "Arama sesi ve sessiz"
 
 #: src/gtk/calls_view.cpp
 msgid "Resume"
-msgstr ""
+msgstr "Sürdür"
 
 #: src/gtk/calls_view.cpp
 msgid "Hold"
-msgstr ""
+msgstr "Beklet"
 
 #: src/gtk/calls_view.cpp
 msgid "Keypad"
-msgstr ""
+msgstr "Tuş takımı"
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1854,22 +1850,19 @@ msgstr "Aranacak numara"
 
 #: src/gtk/calls_view.cpp
 msgid "Call from laptop"
-msgstr ""
+msgstr "Dizüstünden ara"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on this computer."
-msgstr "Çağrı sesi bu bilgisayara geliyor."
+msgstr "Aramayı sesi bu bilgisayarda olacak şekilde yap."
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Call on iPhone"
-msgstr "iPhone’daki çağrıları listele."
+msgstr "iPhone ile ara"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on the iPhone."
-msgstr "iPhone üzerinden çağrı başlat."
+msgstr "Aramayı sesi iPhone’da olacak şekilde yap."
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
@@ -1877,12 +1870,11 @@ msgstr "iPhone’un operatörü, sinyali ve pili."
 
 #: src/gtk/calls_view.cpp
 msgid "Always use laptop for calls"
-msgstr ""
+msgstr "Aramalar için her zaman dizüstünü kullan"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Every call plays on this computer, even ones answered on the iPhone."
-msgstr "Çağrı sesini bu bilgisayara ya da iPhone’a geri taşı."
+msgstr "iPhone’da yanıtlananlar dahil her arama bu bilgisayarda çalar."
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -2523,15 +2515,14 @@ msgid "Sending…"
 msgstr "Gönderiliyor…"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} reply"
 msgid_plural "{} replies"
-msgstr[0] "Yanıtla"
-msgstr[1] "Yanıtla"
+msgstr[0] "{} yanıt"
+msgstr[1] "{} yanıt"
 
 #: src/gtk/messages_view.cpp
 msgid "Replying to {}"
-msgstr ""
+msgstr "{} yanıtlanıyor"
 
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
@@ -2545,7 +2536,7 @@ msgstr "Alındı: {}"
 
 #: src/gtk/messages_view.cpp
 msgid "React"
-msgstr ""
+msgstr "Tepki ver"
 
 #: src/gtk/messages_view.cpp
 msgid "Sent"
@@ -2581,17 +2572,15 @@ msgstr "Tether arka plan hizmetine ulaşılamadı; mesaj gönderilmedi."
 
 #: src/gtk/messages_view.cpp
 msgid "Reaction sent"
-msgstr ""
+msgstr "Tepki gönderildi"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "The reaction was not sent."
-msgstr "Mesaj gönderilmedi."
+msgstr "Tepki gönderilmedi."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Message @{}"
-msgstr "{} adresine mesaj gönder"
+msgstr "@{} kişisine mesaj"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2610,13 +2599,12 @@ msgid "Phone number or email"
 msgstr "Telefon numarası ya da e-posta"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Cancel reply"
-msgstr "Vazgeç"
+msgstr "Yanıtı iptal et"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
-msgstr ""
+msgstr "Emoji (Ctrl+.)"
 
 #: src/gtk/messages_view.cpp
 msgid "Send"
@@ -2652,13 +2640,14 @@ msgid "Notification mirroring is unavailable."
 msgstr "Bildirim yansıtma kullanılamıyor."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Mute notifications"
-msgstr "Yeni bildirim"
+msgstr "Bildirimleri sessize al"
 
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
+"Mesajlar veya iPhone uygulamaları için masaüstü açılır penceresi yok. "
+"Aramalar yine çalar."
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2919,11 +2908,3 @@ msgstr "iPhone;iOS;SMS;Mesajlar;Pano;Dosyalar;Bildirimler;Aramalar;AirPods;"
 
 #~ msgid "Move audio to iPhone"
 #~ msgstr "Sesi iPhone’a taşı"
-
-#, fuzzy
-#~ msgid "Tether version"
-#~ msgstr "tether sürümünü yazdır."
-
-#, fuzzy
-#~ msgid "on"
-#~ msgstr "Bağ"

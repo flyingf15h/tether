@@ -200,14 +200,14 @@ msgid "Hang up every call."
 msgstr "Ukončit všechny hovory."
 
 #: src/cli/main.cpp
-#, fuzzy
 msgid ""
 "Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
 "PipeWire holding Hands-Free, calls answered or placed here play on this "
 "computer."
 msgstr ""
-"Zapnout nebo vypnout ovládání hovorů. Hovory jdou přes Bluetooth hands-free; "
-"zvuk zůstává v iPhonu."
+"Zapnout nebo vypnout ovládání hovorů. Hovory běží přes Bluetooth Hands-Free. "
+"Když Hands-Free obsluhuje PipeWire, hovory přijaté nebo zahájené zde hrají "
+"na tomto počítači."
 
 #: src/cli/main.cpp
 msgid ""
@@ -1584,9 +1584,8 @@ msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "Hovory se ovládají zde; zvuk se přehrává v iPhonu."
 
 #: src/core/src/bluetooth/telephony.cpp
-#, fuzzy
 msgid "Could not reach the audio server to mute the microphone."
-msgstr "Nepodařilo se načíst baterii AirPods z démona.\n"
+msgstr "Nelze se spojit se zvukovým serverem a ztlumit mikrofon."
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1732,22 +1731,20 @@ msgid "Open in {}"
 msgstr "Otevřít v {}"
 
 #: src/daemon/notification.cpp
-#, fuzzy
 msgid "{} is calling"
-msgstr "Vytáčení"
+msgstr "{} volá"
 
 #: src/daemon/notification.cpp
 msgid "Phone"
-msgstr ""
+msgstr "Telefon"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Answer on laptop"
-msgstr ""
+msgstr "Přijmout na notebooku"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Answer on iPhone"
-msgstr "Připojte svůj iPhone"
+msgstr "Přijmout na iPhonu"
 
 #: src/daemon/notification.cpp src/gtk/calls_view.cpp
 msgid "Decline"
@@ -1755,7 +1752,7 @@ msgstr "Odmítnout"
 
 #: src/gtk/calls_view.cpp
 msgid "Mute microphone"
-msgstr ""
+msgstr "Ztlumit mikrofon"
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1804,37 +1801,37 @@ msgid "Answer"
 msgstr "Přijmout"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Audio on this computer"
-msgstr "Zvuk hovoru půjde do tohoto počítače."
+msgstr "Zvuk na tomto počítači"
 
 #: src/gtk/calls_view.cpp
 msgid "To move it back, pick iPhone under Audio on the phone's call screen."
 msgstr ""
+"Pro vrácení zvolte iPhone v nabídce Zvuk na obrazovce hovoru v telefonu."
 
 #: src/gtk/calls_view.cpp
 msgid "Move to laptop"
-msgstr ""
+msgstr "Přesunout na notebook"
 
 #: src/gtk/calls_view.cpp
 msgid "Play this call on the laptop's speakers and mic."
-msgstr ""
+msgstr "Použít pro tento hovor reproduktory a mikrofon notebooku."
 
 #: src/gtk/calls_view.cpp
 msgid "Call volume and mute"
-msgstr ""
+msgstr "Hlasitost a ztlumení hovoru"
 
 #: src/gtk/calls_view.cpp
 msgid "Resume"
-msgstr ""
+msgstr "Obnovit"
 
 #: src/gtk/calls_view.cpp
 msgid "Hold"
-msgstr ""
+msgstr "Podržet"
 
 #: src/gtk/calls_view.cpp
 msgid "Keypad"
-msgstr ""
+msgstr "Klávesnice"
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1856,22 +1853,19 @@ msgstr "Číslo k volání"
 
 #: src/gtk/calls_view.cpp
 msgid "Call from laptop"
-msgstr ""
+msgstr "Volat z notebooku"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on this computer."
-msgstr "Zvuk hovoru půjde do tohoto počítače."
+msgstr "Zahájit hovor se zvukem na tomto počítači."
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Call on iPhone"
-msgstr "Vypsat hovory na iPhonu."
+msgstr "Volat z iPhonu"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Place the call with its audio on the iPhone."
-msgstr "Zavolat z iPhonu."
+msgstr "Zahájit hovor se zvukem na iPhonu."
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
@@ -1879,12 +1873,11 @@ msgstr "Operátor, signál a baterie iPhonu."
 
 #: src/gtk/calls_view.cpp
 msgid "Always use laptop for calls"
-msgstr ""
+msgstr "Vždy používat notebook pro hovory"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "Every call plays on this computer, even ones answered on the iPhone."
-msgstr "Přesunout zvuk hovoru do tohoto počítače, nebo zpět do iPhonu."
+msgstr "Každý hovor hraje na tomto počítači, i ten přijatý na iPhonu."
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -2527,16 +2520,15 @@ msgid "Sending…"
 msgstr "Odesílání…"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} reply"
 msgid_plural "{} replies"
-msgstr[0] "Odpovědět"
-msgstr[1] "Odpovědět"
-msgstr[2] "Odpovědět"
+msgstr[0] "{} odpověď"
+msgstr[1] "{} odpovědi"
+msgstr[2] "{} odpovědí"
 
 #: src/gtk/messages_view.cpp
 msgid "Replying to {}"
-msgstr ""
+msgstr "Odpověď pro {}"
 
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
@@ -2550,7 +2542,7 @@ msgstr "Přijato: {}"
 
 #: src/gtk/messages_view.cpp
 msgid "React"
-msgstr ""
+msgstr "Reagovat"
 
 #: src/gtk/messages_view.cpp
 msgid "Sent"
@@ -2586,17 +2578,15 @@ msgstr "Nepodařilo se spojit s démonem Tether; zpráva nebyla odeslána."
 
 #: src/gtk/messages_view.cpp
 msgid "Reaction sent"
-msgstr ""
+msgstr "Reakce odeslána"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "The reaction was not sent."
-msgstr "Zpráva nebyla odeslána."
+msgstr "Reakce nebyla odeslána."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Message @{}"
-msgstr "Napsat zprávu {}"
+msgstr "Zpráva pro @{}"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2615,13 +2605,12 @@ msgid "Phone number or email"
 msgstr "Telefonní číslo nebo e-mail"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Cancel reply"
-msgstr "Zrušit"
+msgstr "Zrušit odpověď"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
-msgstr ""
+msgstr "Emoji (Ctrl+.)"
 
 #: src/gtk/messages_view.cpp
 msgid "Send"
@@ -2657,13 +2646,13 @@ msgid "Notification mirroring is unavailable."
 msgstr "Zrcadlení oznámení není dostupné."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Mute notifications"
-msgstr "Nové oznámení"
+msgstr "Ztlumit oznámení"
 
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
+"Žádná vyskakovací okna pro zprávy ani aplikace iPhonu. Hovory stále vyzvání."
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2916,11 +2905,3 @@ msgstr "iPhone;iOS;SMS;Zprávy;Schránka;Soubory;Oznámení;Hovory;AirPods;"
 
 #~ msgid "Move audio to iPhone"
 #~ msgstr "Přesunout zvuk do iPhonu"
-
-#, fuzzy
-#~ msgid "Tether version"
-#~ msgstr "Vypsat verzi tether."
-
-#, fuzzy
-#~ msgid "on"
-#~ msgstr "Vazba"
