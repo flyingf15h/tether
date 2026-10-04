@@ -72,13 +72,20 @@ Then restart the daemon (`systemctl --user restart tetherd`, or log out and back
 
 ### Importing old messages
 
+> [!IMPORTANT]
+> Install the fork and restart the daemon **before** you import. Stock tetherd deletes messages older than 90 days every time it starts, so it would wipe an imported history on its first restart. The importer checks for this and refuses to run against a stock daemon.
+
+The importer isn't part of the `.deb`. Get it from a clone of this branch:
+
 ```bash
+systemctl --user restart tetherd              # make sure the fork's daemon is the one running
+cp -a ~/.local/share/tether ~/.local/share/tether.before-import
 idevicebackup2 backup --full ~/iPhoneBackup   # unencrypted backup, keep the phone unlocked
 scripts/import-iphone-backup.py --dry-run ~/iPhoneBackup
 scripts/import-iphone-backup.py ~/iPhoneBackup
 ```
 
-Back up `~/.local/share/tether` first. Once the import is done you can delete the backup folder, which can be tens of GB.
+Once the import is done you can delete `~/iPhoneBackup`, which can be tens of GB.
 
 ![The Tether desktop app's Messages view: a conversation list on the left and an open conversation with sent and received messages on the right](docs/img/messages.webp)
 

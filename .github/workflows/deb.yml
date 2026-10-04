@@ -28,6 +28,9 @@ jobs:
           cmake --preset release
           cmake --build --preset release
 
+      - name: unit tests
+        run: ctest --test-dir build/release --output-on-failure --no-tests=error
+
       - name: package
         run: cd build/release && cpack -G DEB
 

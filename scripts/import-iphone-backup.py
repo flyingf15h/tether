@@ -27,6 +27,7 @@ APPLE_EPOCH = 978307200
 SMS_DB_ID = "3d0d7e5fb2ce288813306e4d4636395e047a3d28"
 TAPBACKS = {2000: "Loved", 2001: "Liked", 2002: "Disliked", 2003: "Laughed at", 2004: "Emphasized", 2005: "Questioned"}
 OBJECT_CHAR = "￼"
+THUMBS_UP = "\U0001F44D"
 
 
 def find_sms_db(root):
@@ -148,7 +149,7 @@ def convert(rows):
                 continue
             if kind == 2006:
                 emoji = row["associated_message_emoji"] if "associated_message_emoji" in keys else ""
-                body = f"Reacted {emoji or '\U0001F44D'} to “{target}”"
+                body = f"Reacted {emoji or THUMBS_UP} to “{target}”"
             else:
                 body = f"{TAPBACKS[kind]} “{target}”"
         elif 3000 <= kind <= 3006:
@@ -180,12 +181,16 @@ def convert(rows):
     return out, groups, skipped
 
 
-def send_to_daemon(path):
+def ask_daemon(command, reply, timeout):
+    """Sends one command to tetherd and returns the first line answering it."""
     sock_path = os.path.join(os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"), "tether", "tetherd.sock")
     s = socket.socket(socket.AF_UNIX)
-    s.connect(sock_path)
-    s.settimeout(600)
-    s.sendall((json.dumps({"command": "bt_import_messages", "path": path}) + "\n").encode())
+    try:
+        s.connect(sock_path)
+    except OSError as e:
+        raise SystemExit(f"tetherd is not running ({sock_path}: {e.strerror}).")
+    s.settimeout(timeout)
+    s.sendall((json.dumps(command) + "\n").encode())
     buf = b""
     while True:
         chunk = s.recv(65536)
@@ -193,8 +198,23 @@ def send_to_daemon(path):
             raise SystemExit("tetherd closed the connection before answering")
         buf += chunk
         for line in buf.split(b"\n"):
-            if b'"bt_import_result"' in line:
+            if reply.encode() in line:
                 return json.loads(line)
+
+
+def check_daemon():
+    """Refuses a stock tetherd: it would not take the import, and on its next start it
+    ages out anything older than 90 days, which is all of a backup's history."""
+    status = ask_daemon({"command": "bt_status"}, '"bt_status"', 10)
+    if "calls_on_laptop" not in status:
+        raise SystemExit(
+            f"The running tetherd (version {status.get('version', '?')}) is not this fork. Install the fork "
+            "(the .deb or `sudo cmake --install build/release`), restart it with "
+            "`systemctl --user restart tetherd`, then run this again.")
+
+
+def send_to_daemon(path):
+    return ask_daemon({"command": "bt_import_messages", "path": path}, '"bt_import_result"', 600)
 
 
 def main():
@@ -216,6 +236,7 @@ def main():
                  "replies": sum(m["body"].startswith("> \u201c") for m in messages)}
         print(kinds)
         return
+    check_daemon()
     fd, path = tempfile.mkstemp(prefix="tether-import-", suffix=".jsonl", dir=os.environ.get("XDG_RUNTIME_DIR"))
     with os.fdopen(fd, "w") as f:
         for message in messages:
