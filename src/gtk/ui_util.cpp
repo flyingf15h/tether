@@ -80,9 +80,21 @@ namespace tether::ui {
     margin-bottom: -6px;
 }
 
-.tether-message-row,
-.tether-message-row:hover {
+.tether-message-row {
     background: none;
+    transition: background-color 120ms ease-out;
+}
+
+/* Discord's faint highlight under the message the pointer is on. */
+.tether-message-row:hover {
+    background-color: alpha(@theme_fg_color, 0.035);
+}
+
+button.tether-reply-count {
+    font-size: 82%;
+    padding: 0 6px;
+    min-height: 18px;
+    color: #0a84ff;
 }
 
 button.tether-message-action {
@@ -102,6 +114,7 @@ button.tether-message-action:hover {
 }
 
 .tether-composer {
+    transition: border-color 150ms ease-out;
     border-radius: 19px;
     border: 1px solid alpha(@theme_fg_color, 0.22);
     padding: 2px 3px 2px 12px;
@@ -116,6 +129,10 @@ button.tether-message-action:hover {
     box-shadow: none;
 }
 
+.tether-composer:focus-within {
+    border-color: alpha(#0a84ff, 0.7);
+}
+
 .tether-placeholder {
     opacity: 0.45;
 }
@@ -125,6 +142,16 @@ button.tether-composer-button {
     min-height: 30px;
     padding: 0;
     border-radius: 15px;
+}
+
+button.tether-composer-button,
+button.tether-send,
+button.tether-message-action {
+    transition: all 120ms ease-out;
+}
+
+button.tether-send:hover {
+    background-color: #3d9bff;
 }
 
 button.tether-send {
@@ -153,6 +180,11 @@ button.tether-send:disabled {
 .tether-thread-list row {
     border-radius: 10px;
     margin: 1px 8px;
+    transition: background-color 120ms ease-out;
+}
+
+.tether-thread-list row:hover:not(:selected) {
+    background-color: alpha(@theme_fg_color, 0.06);
 }
 
 .tether-thread-list row:selected {

@@ -40,6 +40,8 @@ namespace tether::bluetooth {
         // Call control over HFP, through whichever stack owns the profile:
         // BlueZ's own hfp, or PipeWire's, which also works with call audio.
         bool calls_enabled = false;
+        // Every call's audio comes to this computer, not only calls handled here.
+        bool calls_on_laptop = true;
         // When off, supervision runs against no device, so the daemon stops re-dialling
         bool enabled = true;
         // Controller to use, "hci1" or its address. Empty picks the first

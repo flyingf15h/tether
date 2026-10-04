@@ -5,6 +5,8 @@
 #include <tether/i18n.hpp>
 
 #include <algorithm>
+#include <atomic>
+#include <cstdlib>
 #include <cctype>
 
 namespace tether::bluetooth {
@@ -174,7 +176,33 @@ namespace tether::bluetooth {
         return j;
     }
 
-    nlohmann::json TelephonyClient::calls() const { return to_json(pick().second.calls); }
+    nlohmann::json TelephonyClient::calls() const {
+        // An ended call lingers as "disconnected" until the stack drops it, which
+        // otherwise lists the same person twice when they call back.
+        std::vector<Call> live = pick().second.calls;
+        live.erase(std::remove_if(live.begin(), live.end(), [](const Call& c) { return c.state == "disconnected"; }),
+                   live.end());
+        nlohmann::json out = to_json(live);
+        std::lock_guard<std::mutex> lock(audio_mutex_);
+        for (auto& call : out)
+            call["muted"] = muted_;
+        return out;
+    }
+
+    bool TelephonyClient::set_muted(bool muted, std::string& err) {
+        // The echo-cancelled call mic when it exists, the default mic otherwise.
+        for (const char* source : {"tether_call_mic", "@DEFAULT_SOURCE@"}) {
+            const std::string cmd =
+                std::string("pactl set-source-mute ") + source + (muted ? " 1" : " 0") + " >/dev/null 2>&1";
+            if (std::system(cmd.c_str()) == 0) {
+                std::lock_guard<std::mutex> lock(audio_mutex_);
+                muted_ = muted;
+                return true;
+            }
+        }
+        err = _("Could not reach the audio server to mute the microphone.");
+        return false;
+    }
 
     bool TelephonyClient::invoke(TelephonySource& source,
                                  const std::string& path,
@@ -258,45 +286,95 @@ namespace tether::bluetooth {
                       err);
     }
 
+    namespace {
+        std::atomic<bool> g_calls_on_laptop{true};
+    }
+
+    void set_calls_on_laptop(bool on) { g_calls_on_laptop = on; }
+
+    bool calls_on_laptop() { return g_calls_on_laptop; }
+
     bool TelephonyClient::claim_audio(TelephonySource& source, const TelephonySnapshot& snap, std::string& err) {
         if (!route_audio(source, snap, false, err))
             return false;
         std::lock_guard<std::mutex> lock(audio_mutex_);
         audio_claimed_ = true;
         claimed_call_seen_ = !snap.calls.empty();
+        for (const auto& call : snap.calls)
+            on_phone_.erase(call.path);
+        return true;
+    }
+
+    bool TelephonyClient::set_reject_sco(TelephonySource& source, const TelephonySnapshot& snap, bool reject) {
+        std::string err;
+        if (!invoke(source,
+                    snap.gateway.path,
+                    "org.freedesktop.DBus.Properties",
+                    "Set",
+                    g_variant_new("(ssv)", source.ids().transport_iface, "RejectSCO", g_variant_new_boolean(reject)),
+                    err)) {
+            debug::log(INFO, "telephony: could not set RejectSCO: {}", err);
+            return false;
+        }
         return true;
     }
 
     void TelephonyClient::settle_audio() {
-        {
-            std::lock_guard<std::mutex> lock(audio_mutex_);
-            if (!audio_claimed_)
-                return;
-        }
         const auto [source, snap] = pick();
         std::lock_guard<std::mutex> lock(audio_mutex_);
         if (!source || !source->ids().transport_iface) {
-            // The gateway went away, and PipeWire resets RejectSCO with it.
             audio_claimed_ = claimed_call_seen_ = false;
+            pulled_.clear();
+            on_phone_.clear();
+            idle_gateway_.clear();
             return;
         }
-        if (!snap.calls.empty()) {
-            claimed_call_seen_ = true;
+        const bool laptop = calls_on_laptop();
+
+        if (snap.calls.empty()) {
+            // A dial from here is claimed before its call object exists.
+            if (audio_claimed_ && !claimed_call_seen_)
+                return;
+            const bool ended = audio_claimed_ || !pulled_.empty();
+            audio_claimed_ = claimed_call_seen_ = false;
+            pulled_.clear();
+            on_phone_.clear();
+            if (muted_) {
+                muted_ = false;
+                std::system("pactl set-source-mute tether_call_mic 0 >/dev/null 2>&1; "
+                            "pactl set-source-mute @DEFAULT_SOURCE@ 0 >/dev/null 2>&1");
+            }
+            // Between calls the gate follows the preference: open lets the phone
+            // bring the next call straight here, shut keeps it on the earpiece.
+            // PipeWire resets it for a new gateway, so that counts as unapplied.
+            const std::string applied = snap.gateway.path + (laptop ? "#here" : "#phone");
+            if (ended || idle_gateway_ != applied) {
+                if (set_reject_sco(*source, snap, !laptop))
+                    idle_gateway_ = applied;
+            }
             return;
         }
-        if (!claimed_call_seen_)
-            return;
-        audio_claimed_ = claimed_call_seen_ = false;
-        std::string err;
-        if (!invoke(*source,
-                    snap.gateway.path,
-                    "org.freedesktop.DBus.Properties",
-                    "Set",
-                    g_variant_new("(ssv)", source->ids().transport_iface, "RejectSCO", g_variant_new_boolean(TRUE)),
-                    err))
-            debug::log(INFO, "telephony: could not hand call audio back to the iPhone: {}", err);
-        else
-            debug::log(INFO, "telephony: call ended, the next call's audio stays on the iPhone");
+
+        claimed_call_seen_ = true;
+        // Each call is pulled here once, when it can carry audio. Once it has been
+        // here, moving it to the phone from the phone is respected.
+        const bool here = snap.audio_state == "active";
+        for (const auto& call : snap.calls) {
+            if (!(call.connected() || call.outgoing()) || pulled_.count(call.path) || on_phone_.count(call.path))
+                continue;
+            if (!laptop && !audio_claimed_)
+                continue;
+            if (here) {
+                pulled_.insert(call.path);
+                continue;
+            }
+            std::string err;
+            if (set_reject_sco(*source, snap, false) &&
+                invoke(*source, snap.gateway.path, source->ids().transport_iface, "Activate", nullptr, err)) {
+                debug::log(INFO, "telephony: call audio brought to this computer");
+                pulled_.insert(call.path);
+            }
+        }
     }
 
     bool TelephonyClient::call_action(const std::string& path, const std::string& action, std::string& err) {
@@ -323,9 +401,19 @@ namespace tether::bluetooth {
             // voice link to this computer.
             if (action == "answer_here" && !claim_audio(*source, snap, err))
                 return false;
+            if (action == "answer") {
+                // Picked "on iPhone": this call stays there even with laptop as the default.
+                std::lock_guard<std::mutex> lock(audio_mutex_);
+                on_phone_.insert(target);
+                if (calls_on_laptop())
+                    set_reject_sco(*source, snap, true);
+            }
             return invoke(
                 *source, target, source->ids().call_iface, action == "hangup" ? "Hangup" : "Answer", nullptr, err);
         }
+
+        if (action == "mute" || action == "unmute")
+            return set_muted(action == "mute", err);
 
         // Moving a call here is for that call: the default comes back once it ends.
         if (action == "audio_here")
@@ -335,6 +423,8 @@ namespace tether::bluetooth {
 
         static const std::pair<const char*, const char*> gateway_actions[] = {
             {"hangup_all", "HangupAll"},
+            // With no second call, AT+CHLD=2 holds the active call and resumes a held one.
+            {"hold", "HoldAndAnswer"},
             {"swap", "SwapCalls"},
             {"hold_and_answer", "HoldAndAnswer"},
             {"release_and_answer", "ReleaseAndAnswer"},

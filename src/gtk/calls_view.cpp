@@ -5,6 +5,9 @@
 #include <tether/i18n.hpp>
 
 #include <string>
+#include <cstdlib>
+#include <cctype>
+#include <cstring>
 
 namespace tether::ui {
 
@@ -17,6 +20,7 @@ namespace tether::ui {
             GtkWidget* entry = nullptr;
             GtkWidget* dial_button = nullptr;
             GtkWidget* dial_phone_button = nullptr;
+            GtkWidget* laptop_switch = nullptr;
             GtkWidget* network_label = nullptr;
             bool visible = false;
             bool available = false;
@@ -55,6 +59,102 @@ namespace tether::ui {
         void on_audio_here_clicked(GtkButton*, gpointer) { send_action("audio_here", ""); }
 
         void on_hangup_clicked(GtkButton* button, gpointer) { send_action("hangup", button_path(button)); }
+
+
+        void on_hold_clicked(GtkButton*, gpointer) { send_action("hold", ""); }
+
+        // The caller's voice plays through the echo canceller's sink; its volume is the call volume.
+        int call_volume() {
+            gchar* out = nullptr;
+            int percent = 100;
+            if (g_spawn_command_line_sync("pactl get-sink-volume tether_call_speaker", &out, nullptr, nullptr, nullptr) && out) {
+                if (const char* pct = std::strchr(out, '%')) {
+                    const char* start = pct;
+                    while (start > out && std::isdigit(static_cast<unsigned char>(start[-1])))
+                        --start;
+                    percent = std::atoi(start);
+                }
+            }
+            g_free(out);
+            return percent;
+        }
+
+        void on_volume_changed(GtkRange* range, gpointer) {
+            const int percent = static_cast<int>(gtk_range_get_value(range));
+            const std::string cmd = "pactl set-sink-volume tether_call_speaker " + std::to_string(percent) + "%";
+            g_spawn_command_line_async(cmd.c_str(), nullptr);
+        }
+
+        void on_audio_controls_clicked(GtkButton* button, gpointer) {
+            GtkWidget* popover = gtk_popover_new(GTK_WIDGET(button));
+            GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
+            gtk_container_set_border_width(GTK_CONTAINER(box), 12);
+
+            GtkWidget* volume_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+            gtk_box_pack_start(GTK_BOX(volume_row),
+                               gtk_image_new_from_icon_name("audio-volume-high-symbolic", GTK_ICON_SIZE_BUTTON),
+                               FALSE, FALSE, 0);
+            GtkWidget* scale = gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL, 0, 150, 5);
+            gtk_widget_set_size_request(scale, 220, -1);
+            gtk_scale_add_mark(GTK_SCALE(scale), 100, GTK_POS_BOTTOM, nullptr);
+            gtk_range_set_value(GTK_RANGE(scale), call_volume());
+            gtk_scale_set_value_pos(GTK_SCALE(scale), GTK_POS_RIGHT);
+            g_signal_connect(scale, "value-changed", G_CALLBACK(on_volume_changed), nullptr);
+            gtk_box_pack_start(GTK_BOX(volume_row), scale, TRUE, TRUE, 0);
+            gtk_box_pack_start(GTK_BOX(box), volume_row, FALSE, FALSE, 0);
+
+            GtkWidget* mute_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+            gtk_box_pack_start(GTK_BOX(mute_row), gtk_label_new(_("Mute microphone")), FALSE, FALSE, 0);
+            GtkWidget* mute = gtk_switch_new();
+            gtk_switch_set_active(GTK_SWITCH(mute), g_object_get_data(G_OBJECT(button), "muted") != nullptr);
+            g_signal_connect(mute,
+                             "notify::active",
+                             G_CALLBACK(+[](GtkSwitch* sw, GParamSpec*, gpointer) {
+                                 send_action(gtk_switch_get_active(sw) ? "mute" : "unmute", "");
+                             }),
+                             nullptr);
+            gtk_box_pack_end(GTK_BOX(mute_row), mute, FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(box), mute_row, FALSE, FALSE, 0);
+
+            gtk_container_add(GTK_CONTAINER(popover), box);
+            gtk_widget_show_all(box);
+            g_signal_connect(popover, "closed", G_CALLBACK(+[](GtkPopover* p, gpointer) { gtk_widget_destroy(GTK_WIDGET(p)); }), nullptr);
+            gtk_popover_popup(GTK_POPOVER(popover));
+        }
+
+        void on_tone_clicked(GtkButton* button, gpointer) {
+            nlohmann::json j;
+            j["command"] = "bt_call_tones";
+            j["tones"] = gtk_button_get_label(button);
+            daemon_send(j);
+        }
+
+        // Touch tones for menus ("press 1 for..."), sent through the phone.
+        void on_keypad_clicked(GtkButton* button, gpointer) {
+            GtkWidget* popover = gtk_popover_new(GTK_WIDGET(button));
+            GtkWidget* grid = gtk_grid_new();
+            gtk_container_set_border_width(GTK_CONTAINER(grid), 8);
+            gtk_grid_set_row_spacing(GTK_GRID(grid), 6);
+            gtk_grid_set_column_spacing(GTK_GRID(grid), 6);
+            const char* keys[] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#"};
+            for (int i = 0; i < 12; ++i) {
+                GtkWidget* key = gtk_button_new_with_label(keys[i]);
+                gtk_widget_set_size_request(key, 48, 40);
+                g_signal_connect(key, "clicked", G_CALLBACK(on_tone_clicked), nullptr);
+                gtk_grid_attach(GTK_GRID(grid), key, i % 3, i / 3, 1, 1);
+            }
+            gtk_container_add(GTK_CONTAINER(popover), grid);
+            gtk_widget_show_all(grid);
+            g_signal_connect(popover, "closed", G_CALLBACK(+[](GtkPopover* p, gpointer) { gtk_widget_destroy(GTK_WIDGET(p)); }), nullptr);
+            gtk_popover_popup(GTK_POPOVER(popover));
+        }
+
+        GtkWidget* icon_button(const char* icon, const char* tip) {
+            GtkWidget* button = gtk_button_new_from_icon_name(icon, GTK_ICON_SIZE_BUTTON);
+            gtk_widget_set_tooltip_text(button, tip);
+            gtk_widget_set_valign(button, GTK_ALIGN_CENTER);
+            return button;
+        }
 
         void dial(bool audio_here) {
             const gchar* text = gtk_entry_get_text(GTK_ENTRY(g_calls.entry));
@@ -204,6 +304,27 @@ namespace tether::ui {
                 gtk_box_pack_start(GTK_BOX(box), audio, FALSE, FALSE, 0);
             }
 
+            // In-call controls, so nothing about a call needs the phone in hand.
+            if (call.value("connected", false)) {
+                GtkWidget* audio_controls = icon_button(call.value("muted", false) ? "microphone-sensitivity-muted-symbolic"
+                                                                                   : "audio-volume-high-symbolic",
+                                                        _("Call volume and mute"));
+                gtk_widget_set_sensitive(audio_controls, g_calls.audio_here);
+                g_object_set_data(G_OBJECT(audio_controls), "muted", GINT_TO_POINTER(call.value("muted", false) ? 1 : 0));
+                g_signal_connect(audio_controls, "clicked", G_CALLBACK(on_audio_controls_clicked), nullptr);
+                gtk_box_pack_start(GTK_BOX(box), audio_controls, FALSE, FALSE, 0);
+
+                GtkWidget* hold = icon_button(state == "held" ? "media-playback-start-symbolic"
+                                                              : "media-playback-pause-symbolic",
+                                              state == "held" ? _("Resume") : _("Hold"));
+                g_signal_connect(hold, "clicked", G_CALLBACK(on_hold_clicked), nullptr);
+                gtk_box_pack_start(GTK_BOX(box), hold, FALSE, FALSE, 0);
+
+                GtkWidget* keypad = icon_button("input-dialpad-symbolic", _("Keypad"));
+                g_signal_connect(keypad, "clicked", G_CALLBACK(on_keypad_clicked), nullptr);
+                gtk_box_pack_start(GTK_BOX(box), keypad, FALSE, FALSE, 0);
+            }
+
             if (state != "disconnected") {
                 GtkWidget* hangup = gtk_button_new_with_label(ringing ? _("Decline") : _("Hang up"));
                 gtk_style_context_add_class(gtk_widget_get_style_context(hangup), "destructive-action");
@@ -229,6 +350,14 @@ namespace tether::ui {
         }
 
     } // namespace
+
+    void calls_view_set_on_laptop(bool on) {
+        if (!g_calls.laptop_switch || gtk_switch_get_active(GTK_SWITCH(g_calls.laptop_switch)) == on)
+            return;
+        g_signal_handlers_block_matched(g_calls.laptop_switch, G_SIGNAL_MATCH_DATA, 0, 0, nullptr, nullptr, &g_calls);
+        gtk_switch_set_active(GTK_SWITCH(g_calls.laptop_switch), on);
+        g_signal_handlers_unblock_matched(g_calls.laptop_switch, G_SIGNAL_MATCH_DATA, 0, 0, nullptr, nullptr, &g_calls);
+    }
 
     void calls_view_set_visible(bool visible) {
         g_calls.visible = visible;
@@ -312,6 +441,23 @@ namespace tether::ui {
         gtk_style_context_add_class(gtk_widget_get_style_context(g_calls.network_label), "muted");
         gtk_box_pack_start(GTK_BOX(dial_bar), g_calls.network_label, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(root), dial_bar, FALSE, FALSE, 0);
+
+        GtkWidget* laptop_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+        gtk_container_set_border_width(GTK_CONTAINER(laptop_row), 10);
+        GtkWidget* laptop_label = gtk_label_new(_("Always use laptop for calls"));
+        gtk_label_set_xalign(GTK_LABEL(laptop_label), 0.0);
+        gtk_widget_set_tooltip_text(laptop_label, _("Every call plays on this computer, even ones answered on the iPhone."));
+        gtk_box_pack_start(GTK_BOX(laptop_row), laptop_label, TRUE, TRUE, 0);
+        g_calls.laptop_switch = gtk_switch_new();
+        gtk_switch_set_active(GTK_SWITCH(g_calls.laptop_switch), TRUE);
+        g_signal_connect(g_calls.laptop_switch,
+                         "notify::active",
+                         G_CALLBACK(+[](GtkSwitch* sw, GParamSpec*, gpointer) {
+                             daemon_send({{"command", "bt_set_calls_on_laptop"}, {"enabled", gtk_switch_get_active(sw) == TRUE}});
+                         }),
+                         &g_calls);
+        gtk_box_pack_start(GTK_BOX(laptop_row), g_calls.laptop_switch, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(root), laptop_row, FALSE, FALSE, 0);
 
         g_calls.stack = gtk_stack_new();
 

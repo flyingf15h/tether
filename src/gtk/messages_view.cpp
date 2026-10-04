@@ -54,6 +54,8 @@ namespace tether::ui {
             bool side_send = false;
             // Where each rendered message shows its reactions, by body text.
             std::map<std::string, GtkWidget*> reaction_slots;
+            // "N replies" under each rendered message, by body text.
+            std::map<std::string, GtkWidget*> reply_counters;
 
             std::string selected_thread;
             std::string selected_name;
@@ -178,6 +180,7 @@ namespace tether::ui {
             if (g_messages.conversation)
                 clear_list_box(g_messages.conversation);
                 g_messages.reaction_slots.clear();
+                g_messages.reply_counters.clear();
             hide_send_error();
 
             const auto draft = g_messages.drafts.find(key);
@@ -216,7 +219,15 @@ namespace tether::ui {
             const std::string key = thread.value("thread", "");
             const std::string address = thread.value("address", "");
             const std::string name = thread.value("name", address);
-            const std::string preview = thread.value("preview", "");
+            std::string preview = thread.value("preview", "");
+            // Previews arrive flattened to one line, so a reply reads as its quote; show the reply.
+            for (const char* mark : {"> \u201c", "\u21aa \u201c"}) {
+                if (preview.rfind(mark, 0) == 0) {
+                    const size_t close = preview.find("\u201d ");
+                    if (close != std::string::npos)
+                        preview = preview.substr(close + strlen("\u201d "));
+                }
+            }
             const int unread = thread.value("unread", 0);
             const int64_t stamp = thread.value("timestamp", static_cast<int64_t>(0));
 
@@ -316,7 +327,9 @@ namespace tether::ui {
         constexpr int64_t STAMP_GAP_SECONDS = 15 * 60;
         constexpr const char* OPEN_QUOTE = "“";
         constexpr const char* CLOSE_QUOTE = "”";
-        constexpr const char* REPLY_MARK = "↪ ";
+        constexpr const char* REPLY_MARK = "> ";
+        // What replies were marked with before the caret.
+        constexpr const char* OLD_REPLY_MARK = "\u21aa ";
 
         // `“text”` with curly or straight quotes -> text.
         bool unquote(const std::string& quoted, std::string& out) {
@@ -354,13 +367,16 @@ namespace tether::ui {
         void parse_reply(const std::string& body, std::string& quote, std::string& text) {
             text = body;
             quote.clear();
-            if (body.rfind(REPLY_MARK, 0) != 0)
+            const char* mark = body.rfind(REPLY_MARK, 0) == 0       ? REPLY_MARK
+                               : body.rfind(OLD_REPLY_MARK, 0) == 0 ? OLD_REPLY_MARK
+                                                                    : nullptr;
+            if (!mark)
                 return;
             const size_t nl = body.find('\n');
             if (nl == std::string::npos)
                 return;
             std::string inner;
-            if (!unquote(body.substr(strlen(REPLY_MARK), nl - strlen(REPLY_MARK)), inner))
+            if (!unquote(body.substr(strlen(mark), nl - strlen(mark)), inner))
                 return;
             quote = inner;
             text = body.substr(nl + 1);
@@ -403,6 +419,31 @@ namespace tether::ui {
             gtk_box_pack_start(GTK_BOX(slot->second), badge, FALSE, FALSE, 0);
             gtk_widget_show(badge);
             gtk_widget_show(slot->second);
+        }
+
+        // A quote is the original cut to 60 characters, so a cut one matches by prefix.
+        GtkWidget* find_reply_counter(const std::string& quote) {
+            if (auto it = g_messages.reply_counters.find(quote); it != g_messages.reply_counters.end())
+                return it->second;
+            const std::string ellipsis = "\u2026";
+            if (quote.size() > ellipsis.size() && quote.compare(quote.size() - ellipsis.size(), ellipsis.size(), ellipsis) == 0) {
+                const std::string prefix = quote.substr(0, quote.size() - ellipsis.size());
+                for (auto it = g_messages.reply_counters.rbegin(); it != g_messages.reply_counters.rend(); ++it)
+                    if (snippet(it->first, 60) == quote || it->first.rfind(prefix, 0) == 0)
+                        return it->second;
+            }
+            return nullptr;
+        }
+
+        void count_reply(const std::string& quote) {
+            GtkWidget* counter = find_reply_counter(quote);
+            if (!counter)
+                return;
+            const int replies = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(counter), "replies")) + 1;
+            g_object_set_data(G_OBJECT(counter), "replies", GINT_TO_POINTER(replies));
+            gtk_button_set_label(GTK_BUTTON(counter),
+                                 tether::tr_format(P_("{} reply", "{} replies", replies), replies).c_str());
+            gtk_widget_show(counter);
         }
 
         void show_reply_bar(const std::string& body) {
@@ -567,6 +608,19 @@ namespace tether::ui {
                                          // TRANSLATORS: Read aloud before a message you received, {} is the message.
                                          : tether::tr_format(_("Received: {}"), body));
             gtk_box_pack_start(GTK_BOX(column), bubble, FALSE, FALSE, 0);
+
+            // iMessage's "2 Replies" under an original; clicking it carries on the thread.
+            GtkWidget* counter = gtk_button_new_with_label("");
+            gtk_button_set_relief(GTK_BUTTON(counter), GTK_RELIEF_NONE);
+            gtk_widget_set_halign(counter, side);
+            gtk_style_context_add_class(gtk_widget_get_style_context(counter), "tether-reply-count");
+            g_object_set_data_full(G_OBJECT(counter), "body", g_strdup(text.c_str()), g_free);
+            g_signal_connect(counter, "clicked", G_CALLBACK(on_reply_clicked), nullptr);
+            gtk_widget_set_no_show_all(counter, TRUE);
+            gtk_box_pack_start(GTK_BOX(column), counter, FALSE, FALSE, 0);
+            g_messages.reply_counters[text] = counter;
+            if (!quote.empty())
+                count_reply(quote);
 
             GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
             gtk_widget_set_valign(actions, GTK_ALIGN_CENTER);
@@ -858,6 +912,7 @@ namespace tether::ui {
                         conversation_bottom(adjustment) - gtk_adjustment_get_value(adjustment);
                 clear_list_box(g_messages.conversation);
                 g_messages.reaction_slots.clear();
+                g_messages.reply_counters.clear();
                 g_messages.rendered_last_stamp = 0;
                 g_messages.rendered_last_outgoing = false;
                 from = 0;
@@ -1090,7 +1145,7 @@ namespace tether::ui {
                 // leaves the text where the user can retry or copy it out.
                 g_messages.drafts.erase(g_messages.selected_thread);
                 set_composer_text("");
-                hide_reply_bar();
+                // The reply bar stays, so the next message continues the same thread.
                 hide_send_error();
                 g_messages.pin_next = true;
                 // The conversation now exists under this key, so the thread list
@@ -1132,6 +1187,7 @@ namespace tether::ui {
             set_markup(g_messages.conversation_header, "<small>" + escape_markup(shown) + "</small>");
             const char* photo = (const char*)g_object_get_data(G_OBJECT(row), "photo");
             set_header_avatar(photo ? photo : "", shown);
+            set_text(g_messages.composer_placeholder, tether::tr_format(_("Message @{}"), shown));
             hide_reply_bar();
             update_composer_sensitivity();
         }
@@ -1181,6 +1237,7 @@ namespace tether::ui {
                 g_messages.compose_requested_key = g_messages.selected_thread;
                 clear_list_box(g_messages.conversation);
                 g_messages.reaction_slots.clear();
+                g_messages.reply_counters.clear();
                 g_messages.rendered.clear();
                 g_messages.rendered_last_stamp = 0;
                 g_messages.rendered_last_outgoing = false;
@@ -1208,6 +1265,7 @@ namespace tether::ui {
 
             clear_list_box(g_messages.conversation);
                 g_messages.reaction_slots.clear();
+                g_messages.reply_counters.clear();
             g_messages.rendered.clear();
             g_messages.rendered_last_stamp = 0;
             g_messages.rendered_last_outgoing = false;
@@ -1548,7 +1606,7 @@ namespace tether::ui {
         // GtkTextView has no placeholder, so a label sits over it while it is empty.
         GtkWidget* composer_overlay = gtk_overlay_new();
         gtk_container_add(GTK_CONTAINER(composer_overlay), composer_frame);
-        g_messages.composer_placeholder = gtk_label_new(_("iMessage"));
+        g_messages.composer_placeholder = gtk_label_new(_("Message"));
         gtk_widget_set_halign(g_messages.composer_placeholder, GTK_ALIGN_START);
         gtk_widget_set_valign(g_messages.composer_placeholder, GTK_ALIGN_CENTER);
         gtk_widget_set_margin_start(g_messages.composer_placeholder, 6);
@@ -1576,7 +1634,8 @@ namespace tether::ui {
                          nullptr);
         gtk_box_pack_start(GTK_BOX(pill), emoji, FALSE, FALSE, 0);
 
-        g_messages.send_button = gtk_button_new_from_icon_name("go-up-symbolic", GTK_ICON_SIZE_BUTTON);
+        g_messages.send_button = gtk_button_new_from_icon_name("document-send-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_widget_set_no_show_all(g_messages.send_button, TRUE);
         gtk_widget_set_tooltip_text(g_messages.send_button, _("Send"));
         set_accessible_name(g_messages.send_button, _("Send"));
         gtk_widget_set_valign(g_messages.send_button, GTK_ALIGN_END);
@@ -1594,8 +1653,10 @@ namespace tether::ui {
                          G_CALLBACK(+[](GtkTextBuffer* buffer, gpointer) {
                              hide_send_error();
                              update_composer_sensitivity();
-                             gtk_widget_set_visible(g_messages.composer_placeholder,
-                                                    gtk_text_buffer_get_char_count(buffer) == 0);
+                             const bool empty = gtk_text_buffer_get_char_count(buffer) == 0;
+                             gtk_widget_set_visible(g_messages.composer_placeholder, empty);
+                             // Discord's composer: the send plane appears once there is something to send.
+                             gtk_widget_set_visible(g_messages.send_button, !empty);
                          }),
                          nullptr);
         // Enabled only once MAP is up and a conversation is open.

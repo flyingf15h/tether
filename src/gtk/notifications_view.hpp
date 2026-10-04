@@ -13,4 +13,7 @@ namespace tether::ui {
     // Notifications are only re-read while the view is on screen.
     void notifications_view_set_visible(bool visible);
 
+    // Reflects the daemon's desktop popup setting in the tab's mute switch.
+    void notifications_view_set_muted(bool muted);
+
 } // namespace tether::ui

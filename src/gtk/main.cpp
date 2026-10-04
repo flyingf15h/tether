@@ -259,8 +259,11 @@ namespace {
         daemon_client_start([](const nlohmann::json& event) {
             contact_completion_update(event);
             settings_handle_event(event);
-            if (event.value("command", "") == "bt_status")
+            if (event.value("command", "") == "bt_status") {
                 set_calls_tab_visible(event.value("calls_enabled", false));
+                notifications_view_set_muted(!event.value("desktop_popups_enabled", true));
+                calls_view_set_on_laptop(event.value("calls_on_laptop", true));
+            }
             if (devices_view_handle_event(event))
                 return;
             if (contacts_view_handle_event(event))

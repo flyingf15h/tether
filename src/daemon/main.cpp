@@ -1,4 +1,5 @@
 #include "notification.hpp"
+#include <tether/bluetooth/telephony.hpp>
 #include <csignal>
 #include <cstdio>
 #include <cstdlib>
@@ -719,6 +720,7 @@ int main(int argc, char** argv) {
             tether::broadcast_local_event(event.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace));
         });
 
+        tether::bluetooth::set_calls_on_laptop(bt_config.calls_on_laptop);
         connections.start(tether::bluetooth::supervised_address(bt_config), bt_config.ancs_enabled);
     } else {
         debug::log(INFO, "Bluetooth unavailable; messages and notifications are disabled");

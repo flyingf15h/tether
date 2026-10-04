@@ -5,6 +5,7 @@
 #include <gio/gio.h>
 #include <memory>
 #include <mutex>
+#include <set>
 #include <nlohmann/json.hpp>
 #include <string>
 #include <utility>
@@ -81,7 +82,7 @@ namespace tether::bluetooth {
         // The number is normalized here, so callers may pass what the user typed.
         bool dial(const std::string& number, std::string& err);
 
-        // action: answer, answer_here, hangup, hangup_all, swap, hold_and_answer,
+        // action: answer, answer_here, hangup, hangup_all, hold, mute, unmute, swap, hold_and_answer,
         // release_and_answer, release_and_swap, multiparty, audio_here,
         // audio_phone. `path` is the call for answer and hangup, and is ignored
         // otherwise.
@@ -92,6 +93,9 @@ namespace tether::bluetooth {
         // Hands the call audio back to the stack's default once a call that was
         // moved here (audio_here, answer_here) has ended. Called on every calls sync.
         void settle_audio();
+
+        // Mutes this computer's microphone for the call. Cleared when the call ends.
+        bool set_muted(bool muted, std::string& err);
 
     private:
         // The serving source and its snapshot or null for none.
@@ -112,15 +116,27 @@ namespace tether::bluetooth {
         // it back to the default once that call ends. Fails on a stack that
         // cannot carry audio.
         bool claim_audio(TelephonySource& source, const TelephonySnapshot& snap, std::string& err);
+        bool set_reject_sco(TelephonySource& source, const TelephonySnapshot& snap, bool reject);
 
         std::vector<std::unique_ptr<TelephonySource>> sources_;
         std::string address_;
-        std::mutex audio_mutex_;
+        mutable std::mutex audio_mutex_;
+        bool muted_ = false;
+        // Calls already brought here once, and calls the user chose to keep on the phone.
+        std::set<std::string> pulled_;
+        std::set<std::string> on_phone_;
+        // Gateway path plus preference last applied between calls.
+        std::string idle_gateway_;
         // Set while a desktop-handled call holds RejectSCO off; seen_call once
         // that call has shown up, so a dial still being set up is not released.
         bool audio_claimed_ = false;
         bool claimed_call_seen_ = false;
     };
+
+    // Whether every call's audio comes to this computer, including calls answered
+    // on the phone. On by default; the Calls page and config can turn it off.
+    void set_calls_on_laptop(bool on);
+    bool calls_on_laptop();
 
     // bluez's hfp on the system bus. No call audio.
     std::unique_ptr<TelephonySource> make_bluez_source(BluezMonitor& monitor, std::string address);

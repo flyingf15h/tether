@@ -16,6 +16,7 @@ namespace tether::ui {
             GtkWidget* status_label = nullptr;
             GtkWidget* list = nullptr;
             GtkWidget* stack = nullptr;
+            GtkWidget* mute = nullptr;
             bool visible = false;
             bool ready = false;
         };
@@ -174,7 +175,43 @@ namespace tether::ui {
         return false;
     }
 
+    void notifications_view_set_muted(bool muted) {
+        if (!g_notifications.mute || gtk_switch_get_active(GTK_SWITCH(g_notifications.mute)) == muted)
+            return;
+        g_signal_handlers_block_matched(g_notifications.mute, G_SIGNAL_MATCH_DATA, 0, 0, nullptr, nullptr, &g_notifications);
+        gtk_switch_set_active(GTK_SWITCH(g_notifications.mute), muted);
+        g_signal_handlers_unblock_matched(g_notifications.mute, G_SIGNAL_MATCH_DATA, 0, 0, nullptr, nullptr, &g_notifications);
+    }
+
     GtkWidget* notifications_view_new() {
+        GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+
+        // Same setting as "Show desktop popups" in Settings, inverted, where people
+        // look for it. Incoming calls still ring.
+        GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+        gtk_container_set_border_width(GTK_CONTAINER(bar), 10);
+        GtkWidget* labels = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+        GtkWidget* title = gtk_label_new(nullptr);
+        gtk_label_set_markup(GTK_LABEL(title), (std::string("<b>") + _("Mute notifications") + "</b>").c_str());
+        gtk_label_set_xalign(GTK_LABEL(title), 0.0);
+        gtk_box_pack_start(GTK_BOX(labels), title, FALSE, FALSE, 0);
+        GtkWidget* hint = gtk_label_new(_("No desktop popups for messages or iPhone apps. Calls still ring."));
+        gtk_label_set_xalign(GTK_LABEL(hint), 0.0);
+        gtk_style_context_add_class(gtk_widget_get_style_context(hint), "muted");
+        gtk_box_pack_start(GTK_BOX(labels), hint, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(bar), labels, TRUE, TRUE, 0);
+        g_notifications.mute = gtk_switch_new();
+        gtk_widget_set_valign(g_notifications.mute, GTK_ALIGN_CENTER);
+        g_signal_connect(g_notifications.mute,
+                         "notify::active",
+                         G_CALLBACK(+[](GtkSwitch* sw, GParamSpec*, gpointer) {
+                             daemon_send({{"command", "set_desktop_popups"}, {"enabled", !gtk_switch_get_active(sw)}});
+                         }),
+                         &g_notifications);
+        gtk_box_pack_start(GTK_BOX(bar), g_notifications.mute, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(root), bar, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(root), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 0);
+
         g_notifications.stack = gtk_stack_new();
 
         GtkWidget* status_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 10);
@@ -199,7 +236,8 @@ namespace tether::ui {
         gtk_stack_add_named(GTK_STACK(g_notifications.stack), scroll, "list");
 
         gtk_stack_set_visible_child_name(GTK_STACK(g_notifications.stack), "status");
-        return g_notifications.stack;
+        gtk_box_pack_start(GTK_BOX(root), g_notifications.stack, TRUE, TRUE, 0);
+        return root;
     }
 
 } // namespace tether::ui
