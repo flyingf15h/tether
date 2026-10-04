@@ -19,6 +19,67 @@
 [![Debian](https://github.com/zackb/tether/actions/workflows/debian.yml/badge.svg?branch=main)](https://github.com/zackb/tether/actions/workflows/debian.yml)
 [![Ubuntu](https://github.com/zackb/tether/actions/workflows/ubuntu.yml/badge.svg?branch=main)](https://github.com/zackb/tether/actions/workflows/ubuntu.yml)
 
+> [!NOTE]
+> **This is a fork of [zackb/tether](https://github.com/zackb/tether).** It adds laptop call audio, an iMessage/Discord style Messages view, and a history importer. All of it lives on the [`laptop-call-audio`](https://github.com/flyingf15h/tether/tree/laptop-call-audio) branch. Everything upstream does still works. See [What this fork changes](#what-this-fork-changes).
+
+## What this fork changes
+
+| Area | Upstream tether | This fork |
+|------|-----------------|-----------|
+| **Call audio** | Stays on the iPhone. The desktop only controls the call. | Audio goes to the laptop's speakers and mic over Bluetooth HFP. **Always use laptop for calls** is on by default, so the laptop keeps the audio even when you answer on the phone. |
+| **Incoming calls** | Answer or decline from the Calls tab | A popup to answer or decline, with the audio on the laptop |
+| **In-call controls** | Hang up, with the call state shown (e.g. "On hold") | A popup with call volume, mute/unmute, Hold, and a number pad for dialing extensions or menus (DTMF) |
+| **Contacts** | Name and number | Contact photos synced from the phone next to conversations and contacts |
+| **Message look** | Simple chat bubbles | iMessage-style bubbles, with reactions shown as badges on the message |
+| **Replies** | Send one message at a time to the conversation | Reply with a `>` button. Replies form a thread you can add to as many times as you want, like iMessage, and the original shows "N replies". |
+| **Composer** | Plain text box | Discord-style: "Message @name", an emoji button, and a paper-plane send button that appears once you type. Hover highlights and smoother transitions. |
+| **Reactions** | Not available | React and emoji buttons on each message |
+| **Notifications** | Always on | A switch at the top of the Notifications tab mutes them |
+| **Message history** | Only what arrives after pairing | [`scripts/import-iphone-backup.py`](scripts/import-iphone-backup.py) imports older 1:1 conversations, including your own messages, reactions and replies, from an unencrypted iPhone backup |
+| **Packaging** | Arch, AppImage, Flatpak, Nix | Also a `.deb` built by CI on Ubuntu 24.04 ([deb workflow](.github/workflows/deb.yml)) |
+
+### Not possible over Bluetooth
+
+iOS only gives a Linux computer plain text messages (MAP) and call audio (HFP). Sending or receiving **images, files and voice messages**, and screen sharing, can't be done over that link, so this fork doesn't add them. Photos and games in imported history show up as placeholders such as `📷 Photo` and `🎮 GamePigeon`.
+
+### Known limitations
+
+- Group chats aren't imported from backups, because MAP gives no conversation ID to match them to.
+- Echo cancellation on laptop calls hasn't been tested on real calls yet.
+- Call volume and mute use `pactl`, so they need PipeWire (with `pipewire-pulse`) or PulseAudio. The `.deb` pulls in `pulseaudio-utils`.
+
+### Installing the fork
+
+**Debian / Ubuntu / Pop!_OS:** open the latest successful [deb workflow run](https://github.com/flyingf15h/tether/actions/workflows/deb.yml), download the `tether-deb` artifact, unzip it, then:
+
+```bash
+sudo apt install ./tether_*_amd64.deb
+```
+
+If you already have upstream tether installed, this replaces it in place. Your pairing and config are kept.
+
+**From source:**
+
+```bash
+git clone -b laptop-call-audio https://github.com/flyingf15h/tether.git
+cd tether
+sudo ./scripts/ci-deps.sh      # build dependencies (Arch, Fedora, Debian, Ubuntu)
+cmake --preset release && cmake --build --preset release
+sudo cmake --install build/release
+```
+
+Then restart the daemon (`systemctl --user restart tetherd`, or log out and back in).
+
+### Importing old messages
+
+```bash
+idevicebackup2 backup --full ~/iPhoneBackup   # unencrypted backup, keep the phone unlocked
+scripts/import-iphone-backup.py --dry-run ~/iPhoneBackup
+scripts/import-iphone-backup.py ~/iPhoneBackup
+```
+
+Back up `~/.local/share/tether` first. Once the import is done you can delete the backup folder, which can be tens of GB.
+
 ![The Tether desktop app's Messages view: a conversation list on the left and an open conversation with sent and received messages on the right](docs/img/messages.webp)
 
 ## Features
@@ -32,7 +93,7 @@
 | **Mail Extension** | ✅ Stable |
 | **Messages (SMS/iMessage)** | ✅ Stable |
 | **Notification Mirroring** | 🧪 Beta |
-| **Phone Calls** (PipeWire only) | 🧪 Alpha |
+| **Phone Calls** (PipeWire only, laptop audio in this fork) | 🧪 Alpha |
 | **AirPods** (opt-in) | 🧪 Alpha |
 
 ### Clipboard Sync
@@ -54,10 +115,9 @@ You can use either or both, depending on your needs.
 Connections run over TLS 1.2 and both sides present a self-signed X.509 certificate.
 
 ### Phone Calls
-Place, answer and end calls on the iPhone from the desktop, complete with caller ID and the phone's carrier and signal. 
-The call audio stays on the iPhone. If you've used Linux long enough you know why (it sounds like "FalsePotty-o"). PulsAlsaWire is too hard to support across all deployment targets.
+Place, answer and end calls on the iPhone from the desktop, complete with caller ID and the phone's carrier and signal.
 
-Stock PipeWire makes the computer a speaker for the phone, which takes call control away and moves the iPhone's music and sounds to the desktop. The recommended audio setting is in [Keeping the phone's audio on the phone](docs/BLUETOOTH.md#keeping-the-phones-audio-on-the-phone).
+*Upstream:* the call audio stays on the iPhone. *This fork:* the audio comes to the laptop by default. Turn off **Always use laptop for calls** to get the upstream behavior back. See [What this fork changes](#what-this-fork-changes).
 
 ### OTP Handling
 Streamline two-factor authentication across your devices:
