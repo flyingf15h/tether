@@ -90,6 +90,16 @@ button.tether-nav-item:checked {
     opacity: 0.6;
 }
 
+.tether-search-hit {
+    background-color: alpha(#0a84ff, 0.22);
+}
+
+.tether-section-label {
+    font-size: 78%;
+    font-weight: bold;
+    opacity: 0.6;
+}
+
 .tether-stamp {
     font-size: 78%;
     opacity: 0.55;
@@ -223,6 +233,35 @@ button.tether-gif-button {
     font-weight: 800;
     font-size: 72%;
     padding: 0 4px;
+}
+
+.tether-link-card {
+    border-radius: 14px;
+    background-color: alpha(@theme_fg_color, 0.07);
+    border: 1px solid alpha(@theme_fg_color, 0.10);
+    transition: background-color 120ms ease-out;
+}
+
+.tether-link-card:hover {
+    background-color: alpha(@theme_fg_color, 0.11);
+}
+
+.tether-link-card image {
+    border-radius: 14px 14px 0 0;
+}
+
+.tether-link-site {
+    font-size: 78%;
+    opacity: 0.6;
+}
+
+.tether-link-title {
+    font-weight: bold;
+}
+
+.tether-link-description {
+    font-size: 88%;
+    opacity: 0.75;
 }
 
 .tether-media image {

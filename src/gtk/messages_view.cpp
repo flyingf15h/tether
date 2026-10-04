@@ -45,6 +45,20 @@ namespace tether::ui {
             GtkWidget* send_error = nullptr;
             GtkWidget* send_error_label = nullptr;
             GtkWidget* header_avatar = nullptr;
+            // History search: results across every conversation in the sidebar, and
+            // a find bar inside the open conversation.
+            GtkWidget* results_header = nullptr;
+            GtkWidget* results_list = nullptr;
+            guint search_timer = 0;
+            std::string pending_jump;  // message to scroll to once its conversation renders
+            // The row being jumped to; layout keeps re-aiming at it until this clears.
+            GtkWidget* jump_row = nullptr;
+            guint jump_timer = 0;
+            GtkWidget* find_bar = nullptr;
+            GtkWidget* find_entry = nullptr;
+            GtkWidget* find_count = nullptr;
+            std::vector<GtkWidget*> find_hits;
+            int find_index = -1;
             GtkWidget* composer_placeholder = nullptr;
             GtkWidget* reply_bar = nullptr;
             GtkWidget* reply_label = nullptr;
@@ -403,6 +417,26 @@ namespace tether::ui {
             text = body.substr(nl + 1);
         }
 
+        // One to three emoji and nothing else, which iMessage shows large without a
+        // bubble. Joiners and variation selectors ride along; punctuation does not count.
+        bool is_emoji_only(const std::string& text) {
+            if (text.empty() || !g_utf8_validate(text.c_str(), -1, nullptr))
+                return false;
+            int emoji = 0;
+            for (const char* p = text.c_str(); *p; p = g_utf8_next_char(p)) {
+                const gunichar c = g_utf8_get_char(p);
+                if (c == 0x200D || (c >= 0xFE00 && c <= 0xFE0F) || (c >= 0x1F3FB && c <= 0x1F3FF) || c == 0x20E3)
+                    continue;
+                const bool pictograph = (c >= 0x1F000 && c <= 0x1FAFF) || (c >= 0x2600 && c <= 0x27BF) ||
+                                        (c >= 0x2B00 && c <= 0x2BFF) || c == 0x203C || c == 0x2049 ||
+                                        (c >= 0x1F1E6 && c <= 0x1F1FF);
+                if (!pictograph)
+                    return false;
+                ++emoji;
+            }
+            return emoji >= 1 && emoji <= 6;
+        }
+
         std::string snippet(const std::string& text, size_t max_chars) {
             gchar* flat = g_strdup(text.c_str());
             for (gchar* c = flat; *c; ++c)
@@ -560,6 +594,8 @@ namespace tether::ui {
             gtk_list_box_row_set_selectable(GTK_LIST_BOX_ROW(row), FALSE);
             gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), FALSE);
             gtk_style_context_add_class(gtk_widget_get_style_context(row), "tether-message-row");
+            g_object_set_data_full(G_OBJECT(row), "handle", g_strdup(message.value("handle", "").c_str()), g_free);
+            g_object_set_data_full(G_OBJECT(row), "search-body", g_strdup(fold(body).c_str()), g_free);
 
             GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
             gtk_widget_set_margin_start(box, 14);
@@ -599,22 +635,32 @@ namespace tether::ui {
                 gtk_box_pack_start(GTK_BOX(column), quoted, FALSE, FALSE, 0);
             }
 
-            // Picture and GIF links (GIPHY, uploads) show as the picture itself.
+            // Picture and GIF links (GIPHY, uploads) show as the picture; other links
+            // get a preview card. A line that is nothing but a picture link is dropped
+            // from the text, since the picture says it.
             std::string words;
             std::vector<std::string> media;
+            std::vector<std::string> cards;
             {
                 size_t start = 0;
                 while (start <= text.size()) {
                     const size_t nl = text.find('\n', start);
                     const std::string line = text.substr(start, nl == std::string::npos ? std::string::npos : nl - start);
-                    if (is_media_url(line))
-                        media.push_back(line);
-                    else
+                    if (media_url_for(line).empty())
                         words += (words.empty() ? "" : "\n") + line;
                     if (nl == std::string::npos)
                         break;
                     start = nl + 1;
                 }
+                for (const auto& url : extract_urls(text)) {
+                    const std::string picture = media_url_for(url);
+                    auto& list = picture.empty() ? cards : media;
+                    const std::string& item = picture.empty() ? url : picture;
+                    if (std::find(list.begin(), list.end(), item) == list.end())
+                        list.push_back(item);
+                }
+                if (cards.size() > 2)
+                    cards.resize(2);
             }
             for (const auto& url : media) {
                 GtkWidget* picture = media_bubble_new(url);
@@ -637,7 +683,7 @@ namespace tether::ui {
             GtkStyleContext* bubble_style = gtk_widget_get_style_context(bubble);
             gtk_style_context_add_class(bubble_style, "tether-bubble");
             gtk_style_context_add_class(bubble_style, outgoing ? "tether-bubble-out" : "tether-bubble-in");
-            if (g_utf8_strlen(text.c_str(), -1) <= 3 && !text.empty() && !g_unichar_isalnum(g_utf8_get_char(text.c_str())))
+            if (is_emoji_only(words))
                 gtk_style_context_add_class(bubble_style, "tether-bubble-emoji");
             // Direction is otherwise only bubble side and color.
             set_accessible_name(bubble,
@@ -649,6 +695,11 @@ namespace tether::ui {
                 gtk_box_pack_start(GTK_BOX(column), bubble, FALSE, FALSE, 0);
             else
                 g_object_ref_sink(bubble), g_object_unref(bubble);
+            for (const auto& url : cards) {
+                GtkWidget* card = link_preview_new(url);
+                gtk_widget_set_halign(card, side);
+                gtk_box_pack_start(GTK_BOX(column), card, FALSE, FALSE, 0);
+            }
 
             // iMessage's "2 Replies" under an original; clicking it carries on the thread.
             GtkWidget* counter = gtk_button_new_with_label("");
@@ -730,11 +781,18 @@ namespace tether::ui {
             return gtk_adjustment_get_value(adjustment) >= conversation_bottom(adjustment) - AT_BOTTOM_SLACK;
         }
 
+        bool aim_at_jump_row();
+        void end_jump();
+
         // GTK only updates the adjustment once it has laid the new rows out, and
         // its layout runs on the frame clock, after any idle this could post.
         void on_conversation_changed(GtkAdjustment* adjustment, gpointer) {
             const double bottom = conversation_bottom(adjustment);
             g_messages.scroll_last_bottom = bottom;
+            if (g_messages.jump_row) {
+                aim_at_jump_row();
+                return;
+            }
             if (g_messages.scroll_pin) {
                 gtk_adjustment_set_value(adjustment, bottom);
             } else if (g_messages.scroll_restore) {
@@ -747,6 +805,15 @@ namespace tether::ui {
         void on_conversation_value_changed(GtkAdjustment* adjustment, gpointer) {
             const double bottom = conversation_bottom(adjustment);
             if (bottom == g_messages.scroll_last_bottom) {
+                if (g_messages.jump_row && g_messages.jump_timer) {
+                    // Our own aim lands here too; only a move away from the row is the user.
+                    GtkAllocation a;
+                    gtk_widget_get_allocation(g_messages.jump_row, &a);
+                    const double value = gtk_adjustment_get_value(adjustment);
+                    const double page = gtk_adjustment_get_page_size(adjustment);
+                    if (a.y < value - 10 || a.y > value + page + 10)
+                        end_jump();
+                }
                 g_messages.scroll_pin = conversation_at_bottom();
                 g_messages.scroll_restore = false;
             }
@@ -782,9 +849,12 @@ namespace tether::ui {
             return haystack && std::strstr(haystack, g_messages.search_needle.c_str()) != nullptr;
         }
 
+        void request_history_search();
+
         void on_search_changed(GtkSearchEntry* entry, gpointer) {
             g_messages.search_needle = fold(gtk_entry_get_text(GTK_ENTRY(entry)));
             gtk_list_box_invalidate_filter(GTK_LIST_BOX(g_messages.thread_list));
+            request_history_search();
         }
 
         // One spelled several ways ("+15551234567", "5551234567"), daemon puts in one bucket.
@@ -925,6 +995,81 @@ namespace tether::ui {
             }
         }
 
+        // Centres `row` in the conversation and flashes it. Layout may not have run
+        // yet for freshly rendered rows, so it retries briefly until it has.
+        // Puts the jump target in the middle of the view. Returns false until the
+        // row has been laid out.
+        bool aim_at_jump_row() {
+            GtkAdjustment* adjustment = conversation_adjustment();
+            GtkWidget* row = g_messages.jump_row;
+            if (!adjustment || !row)
+                return false;
+            GtkAllocation a;
+            gtk_widget_get_allocation(row, &a);
+            if (a.height <= 1)
+                return false;
+            const double page = gtk_adjustment_get_page_size(adjustment);
+            const double target = std::clamp(a.y - (page - a.height) / 2.0, 0.0, conversation_bottom(adjustment));
+            gtk_adjustment_set_value(adjustment, target);
+            // The settle window starts from the first real aim, not from the click:
+            // laying out a long conversation can take longer than the window itself.
+            if (!g_messages.jump_timer)
+                g_messages.jump_timer = g_timeout_add(5000,
+                                                      +[](gpointer) -> gboolean {
+                                                          g_messages.jump_timer = 0;
+                                                          end_jump();
+                                                          return G_SOURCE_REMOVE;
+                                                      },
+                                                      nullptr);
+            return true;
+        }
+
+        void end_jump() {
+            if (g_messages.jump_row)
+                g_object_unref(g_messages.jump_row);
+            g_messages.jump_row = nullptr;
+            if (g_messages.jump_timer)
+                g_source_remove(g_messages.jump_timer);
+            g_messages.jump_timer = 0;
+        }
+
+        // Centres `row` and flashes it. A long conversation keeps laying out for a
+        // moment after it renders, so the view re-aims at the row on every layout
+        // change for two seconds (see on_conversation_changed).
+        void scroll_to_row(GtkWidget* row) {
+            end_jump();
+            // Jumping back means the view must stop following new messages.
+            g_messages.scroll_pin = false;
+            g_messages.scroll_restore = false;
+            g_messages.jump_row = GTK_WIDGET(g_object_ref(row));
+            aim_at_jump_row();
+
+            GtkStyleContext* style = gtk_widget_get_style_context(row);
+            gtk_style_context_add_class(style, "tether-search-hit");
+            g_object_ref(row);
+            g_timeout_add(3500,
+                          +[](gpointer r) -> gboolean {
+                              gtk_style_context_remove_class(gtk_widget_get_style_context(GTK_WIDGET(r)), "tether-search-hit");
+                              g_object_unref(r);
+                              return G_SOURCE_REMOVE;
+                          },
+                          row);
+        }
+
+        bool jump_to_handle(const std::string& handle) {
+            GList* rows = gtk_container_get_children(GTK_CONTAINER(g_messages.conversation));
+            GtkWidget* found = nullptr;
+            for (GList* it = rows; it && !found; it = it->next) {
+                const char* h = (const char*)g_object_get_data(G_OBJECT(it->data), "handle");
+                if (h && handle == h)
+                    found = GTK_WIDGET(it->data);
+            }
+            g_list_free(rows);
+            if (found)
+                scroll_to_row(found);
+            return found != nullptr;
+        }
+
         void show_messages(const nlohmann::json& event) {
             if (!same_thread(event.value("thread", ""), g_messages.selected_thread))
                 return;
@@ -955,6 +1100,7 @@ namespace tether::ui {
                 if (GtkAdjustment* adjustment = conversation_adjustment())
                     g_messages.scroll_from_bottom =
                         conversation_bottom(adjustment) - gtk_adjustment_get_value(adjustment);
+                end_jump();
                 clear_list_box(g_messages.conversation);
                 g_messages.reaction_slots.clear();
                 g_messages.reply_counters.clear();
@@ -969,6 +1115,172 @@ namespace tether::ui {
 
             if (pinned || !appended)
                 restore_conversation_scroll(pinned);
+
+            if (!g_messages.pending_jump.empty()) {
+                const std::string handle = std::move(g_messages.pending_jump);
+                g_messages.pending_jump.clear();
+                if (!jump_to_handle(handle))
+                    set_status_main(_("That message is older than what is loaded for this conversation."));
+            }
+        }
+
+        // ---- history search ----
+
+        std::string lower_ascii(std::string text) {
+            for (char& c : text)
+                c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+            return text;
+        }
+
+        // A window of the message around the first match, the match in bold.
+        std::string search_snippet_markup(const std::string& body, const std::string& query) {
+            std::string flat = body;
+            for (char& c : flat)
+                if (c == '\n')
+                    c = ' ';
+            const size_t at = lower_ascii(flat).find(lower_ascii(query));
+            if (at == std::string::npos)
+                return escape_markup(snippet(flat, 90));
+            size_t start = at > 40 ? at - 40 : 0;
+            while (start > 0 && (static_cast<unsigned char>(flat[start]) & 0xC0) == 0x80)
+                --start;
+            std::string before = flat.substr(start, at - start);
+            std::string match = flat.substr(at, query.size());
+            std::string after = snippet(flat.substr(at + query.size()), 60);
+            return (start > 0 ? "…" : "") + escape_markup(before) + "<b>" + escape_markup(match) + "</b>" +
+                   escape_markup(after);
+        }
+
+        void on_result_activated(GtkListBox*, GtkListBoxRow* row, gpointer) {
+            const char* thread = (const char*)g_object_get_data(G_OBJECT(row), "thread");
+            const char* handle = (const char*)g_object_get_data(G_OBJECT(row), "handle");
+            if (!thread || !handle)
+                return;
+            if (same_thread(thread, g_messages.selected_thread) && jump_to_handle(handle))
+                return;
+            g_messages.pending_jump = handle;
+            messages_view_open_thread(thread);
+        }
+
+        void show_search_results(const nlohmann::json& event) {
+            if (!g_messages.results_list)
+                return;
+            const std::string query = event.value("query", "");
+            // A slower answer for an older query must not replace a newer one.
+            if (fold(query) != g_messages.search_needle)
+                return;
+            clear_list_box(g_messages.results_list);
+            const auto& results = event.contains("results") ? event["results"] : nlohmann::json::array();
+            const int n = static_cast<int>(results.size());
+            gtk_label_set_text(GTK_LABEL(g_messages.results_header),
+                               n == 0 ? _("No messages match")
+                                      : tether::tr_format(P_("{} message", "{} messages", n), n).c_str());
+            gtk_widget_show(g_messages.results_header);
+            for (const auto& result : results) {
+                const std::string thread = result.value("thread", "");
+                std::string name = result.value("name", "");
+                if (name.empty())
+                    name = result.value("address", "");
+                if (name.empty())
+                    name = thread.substr(thread.find(':') + 1);
+                GtkWidget* row = gtk_list_box_row_new();
+                g_object_set_data_full(G_OBJECT(row), "thread", g_strdup(thread.c_str()), g_free);
+                g_object_set_data_full(G_OBJECT(row), "handle", g_strdup(result.value("handle", "").c_str()), g_free);
+                GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+                gtk_container_set_border_width(GTK_CONTAINER(box), 8);
+                gtk_box_pack_start(GTK_BOX(box), avatar_new(result.value("photo", ""), name, 32), FALSE, FALSE, 0);
+                GtkWidget* text = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+                GtkWidget* top = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+                GtkWidget* who = gtk_label_new(nullptr);
+                const std::string author = result.value("outgoing", false) ? std::string(_("You")) + " → " + name : name;
+                gtk_label_set_markup(GTK_LABEL(who), ("<b>" + escape_markup(author) + "</b>").c_str());
+                gtk_label_set_ellipsize(GTK_LABEL(who), PANGO_ELLIPSIZE_END);
+                gtk_label_set_xalign(GTK_LABEL(who), 0.0);
+                gtk_box_pack_start(GTK_BOX(top), who, TRUE, TRUE, 0);
+                GtkWidget* when = gtk_label_new(
+                    format_thread_time(result.value("timestamp", static_cast<int64_t>(0)), std::time(nullptr)).c_str());
+                gtk_style_context_add_class(gtk_widget_get_style_context(when), "muted");
+                gtk_box_pack_start(GTK_BOX(top), when, FALSE, FALSE, 0);
+                gtk_box_pack_start(GTK_BOX(text), top, FALSE, FALSE, 0);
+                GtkWidget* line = gtk_label_new(nullptr);
+                gtk_label_set_markup(GTK_LABEL(line), search_snippet_markup(result.value("body", ""), query).c_str());
+                gtk_label_set_xalign(GTK_LABEL(line), 0.0);
+                gtk_label_set_line_wrap(GTK_LABEL(line), TRUE);
+                gtk_label_set_lines(GTK_LABEL(line), 2);
+                gtk_label_set_ellipsize(GTK_LABEL(line), PANGO_ELLIPSIZE_END);
+                gtk_label_set_max_width_chars(GTK_LABEL(line), 30);
+                gtk_style_context_add_class(gtk_widget_get_style_context(line), "muted");
+                gtk_box_pack_start(GTK_BOX(text), line, FALSE, FALSE, 0);
+                gtk_box_pack_start(GTK_BOX(box), text, TRUE, TRUE, 0);
+                gtk_container_add(GTK_CONTAINER(row), box);
+                gtk_list_box_insert(GTK_LIST_BOX(g_messages.results_list), row, -1);
+            }
+            gtk_widget_show_all(g_messages.results_list);
+        }
+
+        void request_history_search() {
+            if (g_messages.search_timer) {
+                g_source_remove(g_messages.search_timer);
+                g_messages.search_timer = 0;
+            }
+            const std::string query = g_messages.search_entry ? gtk_entry_get_text(GTK_ENTRY(g_messages.search_entry)) : "";
+            if (g_utf8_strlen(query.c_str(), -1) < 2) {
+                if (g_messages.results_list) {
+                    clear_list_box(g_messages.results_list);
+                    gtk_widget_hide(g_messages.results_header);
+                }
+                return;
+            }
+            // Waits for a pause in typing, so it is one search per word, not per key.
+            g_messages.search_timer = g_timeout_add(250,
+                                                    +[](gpointer) -> gboolean {
+                                                        g_messages.search_timer = 0;
+                                                        nlohmann::json j;
+                                                        j["command"] = "bt_search_messages";
+                                                        j["query"] = gtk_entry_get_text(GTK_ENTRY(g_messages.search_entry));
+                                                        daemon_send(j);
+                                                        return G_SOURCE_REMOVE;
+                                                    },
+                                                    nullptr);
+        }
+
+        // ---- find in the open conversation ----
+
+        void find_select(int index) {
+            if (g_messages.find_hits.empty()) {
+                gtk_label_set_text(GTK_LABEL(g_messages.find_count), _("No matches"));
+                return;
+            }
+            const int n = static_cast<int>(g_messages.find_hits.size());
+            g_messages.find_index = (index % n + n) % n;
+            gtk_label_set_text(GTK_LABEL(g_messages.find_count),
+                               tether::tr_format(_("{} of {}"), n - g_messages.find_index, n).c_str());
+            scroll_to_row(g_messages.find_hits[g_messages.find_index]);
+        }
+
+        void find_refresh() {
+            g_messages.find_hits.clear();
+            const std::string needle = fold(gtk_entry_get_text(GTK_ENTRY(g_messages.find_entry)));
+            if (needle.size() < 2) {
+                gtk_label_set_text(GTK_LABEL(g_messages.find_count), "");
+                return;
+            }
+            GList* rows = gtk_container_get_children(GTK_CONTAINER(g_messages.conversation));
+            for (GList* it = rows; it; it = it->next) {
+                const char* body = (const char*)g_object_get_data(G_OBJECT(it->data), "search-body");
+                if (body && std::strstr(body, needle.c_str()))
+                    g_messages.find_hits.push_back(GTK_WIDGET(it->data));
+            }
+            g_list_free(rows);
+            // Newest match first, as iMessage does; Up walks back in time.
+            find_select(static_cast<int>(g_messages.find_hits.size()) - 1);
+        }
+
+        void open_find_bar() {
+            if (!g_messages.find_bar || g_messages.selected_thread.empty())
+                return;
+            gtk_search_bar_set_search_mode(GTK_SEARCH_BAR(g_messages.find_bar), TRUE);
+            gtk_widget_grab_focus(g_messages.find_entry);
         }
 
         void set_banner(const std::string& text, bool offer_permissions) {
@@ -1573,6 +1885,10 @@ namespace tether::ui {
                 gtk_widget_grab_focus(g_messages.thread_list);
                 return TRUE;
             }
+            if ((event->state & GDK_CONTROL_MASK) && (event->keyval == GDK_KEY_f || event->keyval == GDK_KEY_F)) {
+                open_find_bar();
+                return TRUE;
+            }
             if (event->keyval != GDK_KEY_Return && event->keyval != GDK_KEY_KP_Enter)
                 return FALSE;
             if (event->state & (GDK_SHIFT_MASK | GDK_CONTROL_MASK))
@@ -1649,6 +1965,8 @@ namespace tether::ui {
             set_markup(g_messages.conversation_header, "<small>" + escape_markup(shown) + "</small>");
             const char* photo = (const char*)g_object_get_data(G_OBJECT(row), "photo");
             set_header_avatar(photo ? photo : "", shown);
+            if (g_messages.find_bar)
+                gtk_search_bar_set_search_mode(GTK_SEARCH_BAR(g_messages.find_bar), FALSE);
             set_text(g_messages.composer_placeholder, tether::tr_format(_("Message @{}"), shown));
             hide_reply_bar();
             update_composer_sensitivity();
@@ -1697,6 +2015,7 @@ namespace tether::ui {
             // the daemon serves it from memory either way.
             if (g_messages.selected_thread != g_messages.compose_requested_key) {
                 g_messages.compose_requested_key = g_messages.selected_thread;
+                end_jump();
                 clear_list_box(g_messages.conversation);
                 g_messages.reaction_slots.clear();
                 g_messages.reply_counters.clear();
@@ -1827,6 +2146,10 @@ namespace tether::ui {
 
     bool messages_view_handle_event(const nlohmann::json& event) {
         const std::string command = event.value("command", "");
+        if (command == "bt_search_results") {
+            show_search_results(event);
+            return true;
+        }
         if (command == "bt_threads") {
             int unread = 0;
             if (event.contains("threads") && event["threads"].is_array())
@@ -1911,7 +2234,22 @@ namespace tether::ui {
             g_signal_connect(g_messages.thread_list, "row-selected", G_CALLBACK(on_thread_selected), nullptr);
         g_signal_connect(g_messages.thread_list, "row-activated", G_CALLBACK(on_thread_activated), nullptr);
         gtk_list_box_set_filter_func(GTK_LIST_BOX(g_messages.thread_list), thread_visible, nullptr, nullptr);
-        gtk_container_add(GTK_CONTAINER(thread_scroll), g_messages.thread_list);
+        GtkWidget* side_lists = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        gtk_box_pack_start(GTK_BOX(side_lists), g_messages.thread_list, FALSE, FALSE, 0);
+        g_messages.results_header = gtk_label_new("");
+        gtk_label_set_xalign(GTK_LABEL(g_messages.results_header), 0.0);
+        gtk_widget_set_margin_start(g_messages.results_header, 16);
+        gtk_widget_set_margin_top(g_messages.results_header, 12);
+        gtk_widget_set_margin_bottom(g_messages.results_header, 4);
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.results_header), "tether-section-label");
+        gtk_widget_set_no_show_all(g_messages.results_header, TRUE);
+        gtk_box_pack_start(GTK_BOX(side_lists), g_messages.results_header, FALSE, FALSE, 0);
+        g_messages.results_list = gtk_list_box_new();
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.results_list), "tether-thread-list");
+        gtk_list_box_set_activate_on_single_click(GTK_LIST_BOX(g_messages.results_list), TRUE);
+        g_signal_connect(g_messages.results_list, "row-activated", G_CALLBACK(on_result_activated), nullptr);
+        gtk_box_pack_start(GTK_BOX(side_lists), g_messages.results_list, FALSE, FALSE, 0);
+        gtk_container_add(GTK_CONTAINER(thread_scroll), side_lists);
 
         GtkWidget* thread_side = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
 
@@ -2010,7 +2348,46 @@ namespace tether::ui {
         gtk_widget_set_halign(g_messages.conversation_header, GTK_ALIGN_CENTER);
         gtk_label_set_ellipsize(GTK_LABEL(g_messages.conversation_header), PANGO_ELLIPSIZE_END);
         gtk_box_pack_start(GTK_BOX(conversation_header_box), g_messages.conversation_header, FALSE, FALSE, 0);
-        gtk_box_pack_start(GTK_BOX(conversation_box), conversation_header_box, FALSE, FALSE, 0);
+        // The header with a search button at its right edge.
+        GtkWidget* header_overlay = gtk_overlay_new();
+        gtk_container_add(GTK_CONTAINER(header_overlay), conversation_header_box);
+        GtkWidget* find_button = gtk_button_new_from_icon_name("edit-find-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_button_set_relief(GTK_BUTTON(find_button), GTK_RELIEF_NONE);
+        gtk_widget_set_tooltip_text(find_button, _("Search this conversation (Ctrl+F)"));
+        gtk_widget_set_halign(find_button, GTK_ALIGN_END);
+        gtk_widget_set_valign(find_button, GTK_ALIGN_CENTER);
+        gtk_widget_set_margin_end(find_button, 12);
+        g_signal_connect(find_button, "clicked", G_CALLBACK(+[](GtkButton*, gpointer) { open_find_bar(); }), nullptr);
+        gtk_overlay_add_overlay(GTK_OVERLAY(header_overlay), find_button);
+        gtk_box_pack_start(GTK_BOX(conversation_box), header_overlay, FALSE, FALSE, 0);
+
+        g_messages.find_bar = gtk_search_bar_new();
+        GtkWidget* find_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+        g_messages.find_entry = gtk_search_entry_new();
+        gtk_entry_set_placeholder_text(GTK_ENTRY(g_messages.find_entry), _("Search messages"));
+        gtk_entry_set_width_chars(GTK_ENTRY(g_messages.find_entry), 28);
+        gtk_box_pack_start(GTK_BOX(find_row), g_messages.find_entry, TRUE, TRUE, 0);
+        g_messages.find_count = gtk_label_new("");
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.find_count), "muted");
+        gtk_box_pack_start(GTK_BOX(find_row), g_messages.find_count, FALSE, FALSE, 0);
+        GtkWidget* older = gtk_button_new_from_icon_name("go-up-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_widget_set_tooltip_text(older, _("Older match"));
+        g_signal_connect(older, "clicked", G_CALLBACK(+[](GtkButton*, gpointer) { find_select(g_messages.find_index - 1); }), nullptr);
+        gtk_box_pack_start(GTK_BOX(find_row), older, FALSE, FALSE, 0);
+        GtkWidget* newer = gtk_button_new_from_icon_name("go-down-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_widget_set_tooltip_text(newer, _("Newer match"));
+        g_signal_connect(newer, "clicked", G_CALLBACK(+[](GtkButton*, gpointer) { find_select(g_messages.find_index + 1); }), nullptr);
+        gtk_box_pack_start(GTK_BOX(find_row), newer, FALSE, FALSE, 0);
+        gtk_container_add(GTK_CONTAINER(g_messages.find_bar), find_row);
+        gtk_search_bar_connect_entry(GTK_SEARCH_BAR(g_messages.find_bar), GTK_ENTRY(g_messages.find_entry));
+        gtk_search_bar_set_show_close_button(GTK_SEARCH_BAR(g_messages.find_bar), TRUE);
+        g_signal_connect(g_messages.find_entry, "search-changed", G_CALLBACK(+[](GtkSearchEntry*, gpointer) { find_refresh(); }), nullptr);
+        // Enter steps to the next older match, Shift+Enter back towards newer.
+        g_signal_connect(g_messages.find_entry,
+                         "activate",
+                         G_CALLBACK(+[](GtkEntry*, gpointer) { find_select(g_messages.find_index - 1); }),
+                         nullptr);
+        gtk_box_pack_start(GTK_BOX(conversation_box), g_messages.find_bar, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(conversation_box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 0);
 
         g_messages.conversation_scroll = gtk_scrolled_window_new(nullptr, nullptr);

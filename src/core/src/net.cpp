@@ -1,5 +1,6 @@
 #include "tether/net.hpp"
 #include "tether/bluetooth/telephony.hpp"
+#include "tether/bluetooth/journal.hpp"
 #include <tether/i18n.hpp>
 
 #include <arpa/inet.h>
@@ -1329,6 +1330,46 @@ namespace tether {
                                 .dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) +
                             "\n";
                         write_plain_packet(client_fd, payload);
+                        continue;
+                    } else if (j.contains("command") && j["command"] == "bt_search_messages" && j.contains("query")) {
+                        // Every stored message whose text contains the query, newest first,
+                        // case- and accent-insensitively, for the app's history search.
+                        const std::string query = j.value("query", std::string{});
+                        gchar* folded_query = g_utf8_casefold(query.c_str(), -1);
+                        const std::string needle = folded_query ? folded_query : "";
+                        g_free(folded_query);
+                        nlohmann::json results = nlohmann::json::array();
+                        if (needle.size() >= 2) {
+                            std::vector<bluetooth::Message> hits;
+                            {
+                                std::lock_guard<std::mutex> lock(bluetooth::message_store_mutex());
+                                auto& store = bluetooth::message_store();
+                                for (const auto& thread : store.threads())
+                                    for (const auto& message : store.messages(thread.key, bluetooth::JOURNAL_MAX_MESSAGES)) {
+                                        gchar* folded = g_utf8_casefold(message.body.c_str(), -1);
+                                        const bool match = folded && std::strstr(folded, needle.c_str());
+                                        g_free(folded);
+                                        if (match)
+                                            hits.push_back(message);
+                                    }
+                            }
+                            std::sort(hits.begin(), hits.end(), [](const auto& a, const auto& b) {
+                                return a.timestamp > b.timestamp;
+                            });
+                            if (hits.size() > 200)
+                                hits.resize(200);
+                            for (const auto& hit : hits) {
+                                auto entry = bluetooth::to_json(hit);
+                                if (auto name = bluetooth::contact_store().name_for(hit.thread_key); !name.empty())
+                                    entry["name"] = name;
+                                if (auto photo = bluetooth::contact_store().photo_for(hit.thread_key); !photo.empty())
+                                    entry["photo"] = photo;
+                                results.push_back(std::move(entry));
+                            }
+                        }
+                        nlohmann::json payload{{"command", "bt_search_results"}, {"query", query}, {"results", results}};
+                        write_plain_packet(client_fd,
+                                           payload.dump(-1, ' ', false, nlohmann::json::error_handler_t::replace) + "\n");
                         continue;
                     } else if (j.contains("command") && j["command"] == "bt_list_messages" && j.contains("thread")) {
                         std::string payload = build_bt_messages(j["thread"]).dump() + "\n";

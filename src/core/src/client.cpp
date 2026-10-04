@@ -202,24 +202,30 @@ namespace tether {
     }
 
     std::string Client::send_and_wait(const std::string& payload) {
-        constexpr size_t kBufSize = 1024 * 1024; // Generous payload buffer
-        if (read_buf_.size() < kBufSize)
-            read_buf_.resize(kBufSize);
+        constexpr size_t kChunk = 256 * 1024;
+        if (read_buf_.size() < kChunk)
+            read_buf_.resize(kChunk);
         char* buf = read_buf_.data();
 
         if (!send(payload))
             return "";
 
-        if (ssl_) {
-            int n = SSL_read(ssl_, buf, static_cast<int>(kBufSize - 1));
-            if (n > 0)
-                return std::string(buf, n);
-        } else {
-            ssize_t n = ::read(sock_, buf, kBufSize - 1);
-            if (n > 0)
-                return std::string(buf, n);
+        // Replies are one newline-terminated line, often bigger than one read
+        // returns (a long conversation is megabytes), so read until the newline.
+        std::string reply;
+        while (reply.find('\n') == std::string::npos) {
+            ssize_t n = 0;
+            if (ssl_)
+                n = SSL_read(ssl_, buf, static_cast<int>(kChunk));
+            else
+                n = ::read(sock_, buf, kChunk);
+            if (n < 0 && !ssl_ && errno == EINTR)
+                continue;
+            if (n <= 0)
+                break;
+            reply.append(buf, static_cast<size_t>(n));
         }
-        return "";
+        return reply;
     }
 
     bool Client::send(const std::string& payload) {
