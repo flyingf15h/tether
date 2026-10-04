@@ -1,0 +1,37 @@
+name: deb
+
+on:
+  push:
+    branches: [laptop-call-audio]
+  workflow_dispatch:
+
+jobs:
+  deb:
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    steps:
+      - name: bootstrap git
+        run: apt-get update && apt-get install -y --no-install-recommends git ca-certificates
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: dependencies
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          ./scripts/ci-deps.sh
+          apt-get install -y --no-install-recommends dpkg-dev file
+
+      - name: build
+        run: |
+          cmake --preset release
+          cmake --build --preset release
+
+      - name: package
+        run: cd build/release && cpack -G DEB
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tether-deb
+          path: build/release/*.deb
