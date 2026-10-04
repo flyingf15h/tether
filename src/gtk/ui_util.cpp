@@ -32,6 +32,34 @@ namespace tether::ui {
     font-size: 90%;
 }
 
+/* Navbar in the title bar: flat items, the current page underlined in blue. */
+.tether-navbar {
+    margin: 0 8px;
+}
+
+button.tether-nav-item {
+    background: none;
+    border: none;
+    box-shadow: none;
+    border-radius: 8px;
+    padding: 4px 12px;
+    border-bottom: 2px solid transparent;
+    opacity: 0.7;
+    transition: all 150ms ease-out;
+}
+
+button.tether-nav-item:hover {
+    background-color: alpha(@theme_fg_color, 0.07);
+    opacity: 1;
+}
+
+button.tether-nav-item:checked {
+    opacity: 1;
+    border-radius: 8px 8px 2px 2px;
+    border-bottom: 2px solid #0a84ff;
+    background-color: alpha(#0a84ff, 0.12);
+}
+
 /* Messages, styled after iMessage. */
 .tether-bubble {
     padding: 7px 13px;
@@ -185,6 +213,16 @@ button.tether-attachment-remove {
     background: alpha(black, 0.6);
     color: white;
     border: none;
+}
+
+button.tether-gif-button {
+    font-weight: 800;
+    font-size: 72%;
+    padding: 0 4px;
+}
+
+.tether-media image {
+    border-radius: 14px;
 }
 
 .tether-reply-bar {

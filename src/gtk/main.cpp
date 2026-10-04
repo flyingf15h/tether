@@ -14,6 +14,8 @@
 #include <glib-unix.h>
 #include <gtk/gtk.h>
 #include <string>
+#include <vector>
+#include <map>
 #include <tether/crypto.hpp>
 #include <tether/i18n.hpp>
 
@@ -24,6 +26,52 @@ namespace {
     GtkWidget* g_refresh_button = nullptr;
     GtkWidget* g_stack = nullptr;
     GtkWidget* g_calls_page = nullptr;
+    // One button per page in the navbar, by page name.
+    std::map<std::string, GtkWidget*> g_nav;
+    bool g_nav_syncing = false;
+
+    struct NavItem {
+        const char* page;
+        const char* label;
+        const char* icon;
+    };
+
+    void sync_navbar(const std::string& page) {
+        g_nav_syncing = true;
+        for (auto& [name, button] : g_nav)
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(button), name == page);
+        g_nav_syncing = false;
+    }
+
+    // A navbar rather than a tab strip: icon and label per page, the current one underlined.
+    GtkWidget* build_navbar(GtkWidget* stack, const std::vector<NavItem>& items) {
+        GtkWidget* bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+        gtk_style_context_add_class(gtk_widget_get_style_context(bar), "tether-navbar");
+        GSList* group = nullptr;
+        for (const auto& item : items) {
+            GtkWidget* button = gtk_radio_button_new(group);
+            group = gtk_radio_button_get_group(GTK_RADIO_BUTTON(button));
+            gtk_toggle_button_set_mode(GTK_TOGGLE_BUTTON(button), FALSE);
+            gtk_style_context_add_class(gtk_widget_get_style_context(button), "tether-nav-item");
+            GtkWidget* content = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+            gtk_box_pack_start(GTK_BOX(content), gtk_image_new_from_icon_name(item.icon, GTK_ICON_SIZE_BUTTON), FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(content), gtk_label_new(item.label), FALSE, FALSE, 0);
+            gtk_container_add(GTK_CONTAINER(button), content);
+            g_object_set_data_full(G_OBJECT(button), "page", g_strdup(item.page), g_free);
+            g_signal_connect(button,
+                             "toggled",
+                             G_CALLBACK(+[](GtkToggleButton* b, gpointer stack) {
+                                 if (g_nav_syncing || !gtk_toggle_button_get_active(b))
+                                     return;
+                                 gtk_stack_set_visible_child_name(
+                                     GTK_STACK(stack), (const char*)g_object_get_data(G_OBJECT(b), "page"));
+                             }),
+                             stack);
+            gtk_box_pack_start(GTK_BOX(bar), button, FALSE, FALSE, 0);
+            g_nav[item.page] = button;
+        }
+        return bar;
+    }
     gboolean g_start_hidden = FALSE;
 
     // what the current invocation asked to see
@@ -36,6 +84,8 @@ namespace {
         if (!g_calls_page)
             return;
         gtk_widget_set_visible(g_calls_page, enabled);
+        if (auto it = g_nav.find("calls"); it != g_nav.end())
+            gtk_widget_set_visible(it->second, enabled);
         if (enabled || !g_stack)
             return;
         const gchar* name = gtk_stack_get_visible_child_name(GTK_STACK(g_stack));
@@ -58,6 +108,8 @@ namespace {
 
     void on_visible_view_changed(GObject* stack, GParamSpec*, gpointer) {
         const gchar* name = gtk_stack_get_visible_child_name(GTK_STACK(stack));
+        if (name)
+            sync_navbar(name);
         const std::string view = name ? name : "";
 
         // Refresh means "scan for devices", which is meaningless on the other
@@ -238,9 +290,13 @@ namespace {
                              "contacts",
                              _("Contacts"));
 
-        GtkWidget* switcher = gtk_stack_switcher_new();
-        gtk_stack_switcher_set_stack(GTK_STACK_SWITCHER(switcher), GTK_STACK(stack));
-        gtk_header_bar_set_custom_title(GTK_HEADER_BAR(header_bar), switcher);
+        GtkWidget* navbar = build_navbar(stack,
+                                         {{"devices", _("Devices"), "phone-symbolic"},
+                                          {"messages", _("Messages"), "mail-unread-symbolic"},
+                                          {"notifications", _("Notifications"), "preferences-system-notifications-symbolic"},
+                                          {"calls", _("Calls"), "call-start-symbolic"},
+                                          {"contacts", _("Contacts"), "avatar-default-symbolic"}});
+        gtk_header_bar_set_custom_title(GTK_HEADER_BAR(header_bar), navbar);
 
         g_signal_connect(stack, "notify::visible-child-name", G_CALLBACK(on_visible_view_changed), nullptr);
 

@@ -3,6 +3,7 @@ pkg_check_modules(GTK3 REQUIRED gtk+-3.0)
 
 add_executable(tether-gtk
     main.cpp
+    media.cpp
     ui_util.cpp
     prefs.cpp
     message_format.cpp

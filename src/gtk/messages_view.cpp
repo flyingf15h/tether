@@ -3,6 +3,7 @@
 
 #include "contact_completion.hpp"
 #include "daemon_client.hpp"
+#include "media.hpp"
 #include "message_format.hpp"
 #include "prefs.hpp"
 #include "tray.hpp"
@@ -597,8 +598,31 @@ namespace tether::ui {
                 gtk_box_pack_start(GTK_BOX(column), quoted, FALSE, FALSE, 0);
             }
 
+            // Picture and GIF links (GIPHY, uploads) show as the picture itself.
+            std::string words;
+            std::vector<std::string> media;
+            {
+                size_t start = 0;
+                while (start <= text.size()) {
+                    const size_t nl = text.find('\n', start);
+                    const std::string line = text.substr(start, nl == std::string::npos ? std::string::npos : nl - start);
+                    if (is_media_url(line))
+                        media.push_back(line);
+                    else
+                        words += (words.empty() ? "" : "\n") + line;
+                    if (nl == std::string::npos)
+                        break;
+                    start = nl + 1;
+                }
+            }
+            for (const auto& url : media) {
+                GtkWidget* picture = media_bubble_new(url);
+                gtk_widget_set_halign(picture, side);
+                gtk_box_pack_start(GTK_BOX(column), picture, FALSE, FALSE, 0);
+            }
+
             GtkWidget* bubble = gtk_label_new(nullptr);
-            gtk_label_set_markup(GTK_LABEL(bubble), linkify_markup(text).c_str());
+            gtk_label_set_markup(GTK_LABEL(bubble), linkify_markup(words).c_str());
             gtk_label_set_track_visited_links(GTK_LABEL(bubble), FALSE);
             g_signal_connect(bubble, "activate-link", G_CALLBACK(on_bubble_link), nullptr);
             gtk_label_set_line_wrap(GTK_LABEL(bubble), TRUE);
@@ -620,7 +644,10 @@ namespace tether::ui {
                                 outgoing ? tether::tr_format(_("Sent: {}"), body)
                                          // TRANSLATORS: Read aloud before a message you received, {} is the message.
                                          : tether::tr_format(_("Received: {}"), body));
-            gtk_box_pack_start(GTK_BOX(column), bubble, FALSE, FALSE, 0);
+            if (!words.empty() || media.empty())
+                gtk_box_pack_start(GTK_BOX(column), bubble, FALSE, FALSE, 0);
+            else
+                g_object_ref_sink(bubble), g_object_unref(bubble);
 
             // iMessage's "2 Replies" under an original; clicking it carries on the thread.
             GtkWidget* counter = gtk_button_new_with_label("");
@@ -1207,6 +1234,7 @@ namespace tether::ui {
             }
             g_messages.pasted.insert(path);
             add_attachment(path);
+            g_message("paste: saved %s, %zu attachment(s) waiting", path.c_str(), g_messages.attachments.size());
             return true;
         }
 
@@ -1227,12 +1255,24 @@ namespace tether::ui {
                 g_strfreev(uris);
             }
             if (gtk_clipboard_wait_is_image_available(clipboard)) {
-                if (GdkPixbuf* pixbuf = gtk_clipboard_wait_for_image(clipboard)) {
-                    g_signal_stop_emission_by_name(view, "paste-clipboard");
+                g_signal_stop_emission_by_name(view, "paste-clipboard");
+                GdkPixbuf* pixbuf = gtk_clipboard_wait_for_image(clipboard);
+                if (pixbuf && gdk_pixbuf_get_width(pixbuf) > 0) {
+                    g_message("paste: image %dx%d", gdk_pixbuf_get_width(pixbuf), gdk_pixbuf_get_height(pixbuf));
                     attach_pixbuf(pixbuf);
-                    g_object_unref(pixbuf);
+                } else {
+                    // Spectacle can quit before the clipboard manager has copied the
+                    // picture, leaving an image that is advertised but empty.
+                    g_message("paste: clipboard offered an image but it was empty");
+                    const char* reason = _("The copied image was empty. Take the screenshot again, or save it and attach the file.");
+                    set_status_main(reason);
+                    show_send_error(reason);
                 }
+                if (pixbuf)
+                    g_object_unref(pixbuf);
+                return;
             }
+            g_message("paste: no image or files on the clipboard, pasting as text");
         }
 
         void on_drop_received(GtkWidget* widget,
@@ -1324,6 +1364,7 @@ namespace tether::ui {
             std::string link = out ? g_strstrip(out) : "";
             std::string detail = error ? error->message : (err && *err ? g_strstrip(err) : link);
             const bool ok = ran && g_subprocess_get_successful(proc) && g_str_has_prefix(link.c_str(), "https://");
+            g_message("upload: %s -> %s (%s)", job->pending.front().c_str(), ok ? link.c_str() : "failed", detail.c_str());
             g_free(out);
             g_free(err);
             g_clear_error(&error);
@@ -1407,6 +1448,7 @@ namespace tether::ui {
                 body = REPLY_MARK + std::string(OPEN_QUOTE) + snippet(g_messages.reply_to, 60) + CLOSE_QUOTE + "\n" + body;
 
             hide_send_error();
+            g_message("send: %zu chars, %zu attachment(s)", typed.size(), g_messages.attachments.size());
             if (!g_messages.attachments.empty()) {
                 auto* job = new UploadJob{g_messages.attachments, {}, {}, typed, body, g_messages.selected_thread, 0};
                 job->total = job->pending.size();
@@ -1466,7 +1508,7 @@ namespace tether::ui {
             if (g_messages.side_send) {
                 g_messages.side_send = false;
                 const bool ok = event.value("success", false);
-                set_status_main(ok ? _("Reaction sent") : event.value("message", _("The reaction was not sent.")));
+                set_status_main(ok ? _("Sent") : event.value("message", _("The message was not sent.")));
                 if (ok)
                     g_messages.pin_next = true;
                 return;
@@ -1962,6 +2004,23 @@ namespace tether::ui {
         g_signal_connect(attach, "clicked", G_CALLBACK(on_attach_clicked), nullptr);
         gtk_box_pack_start(GTK_BOX(pill), attach, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(pill), composer_overlay, TRUE, TRUE, 0);
+
+        GtkWidget* gif = gtk_button_new_with_label("GIF");
+        gtk_button_set_relief(GTK_BUTTON(gif), GTK_RELIEF_NONE);
+        gtk_widget_set_valign(gif, GTK_ALIGN_END);
+        gtk_widget_set_tooltip_text(gif, _("Send a GIF"));
+        gtk_style_context_add_class(gtk_widget_get_style_context(gif), "tether-composer-button");
+        gtk_style_context_add_class(gtk_widget_get_style_context(gif), "tether-gif-button");
+        // Sent as a GIPHY link, which iMessage plays inline on the other phone too.
+        g_signal_connect(gif,
+                         "clicked",
+                         G_CALLBACK(+[](GtkButton* button, gpointer) {
+                             if (g_messages.selected_thread.empty())
+                                 return;
+                             gif_picker_open(GTK_WIDGET(button), [](const std::string& url) { send_side_message(url); });
+                         }),
+                         nullptr);
+        gtk_box_pack_start(GTK_BOX(pill), gif, FALSE, FALSE, 0);
 
         GtkWidget* emoji = gtk_button_new_from_icon_name("face-smile-symbolic", GTK_ICON_SIZE_BUTTON);
         gtk_button_set_relief(GTK_BUTTON(emoji), GTK_RELIEF_NONE);
