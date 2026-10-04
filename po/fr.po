@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-02 19:39-0700\n"
+"POT-Creation-Date: 2026-10-04 14:55-0400\n"
 "PO-Revision-Date: 2026-08-22\n"
 "Last-Translator: Tether project\n"
 "Language-Team: French\n"
@@ -206,9 +206,11 @@ msgid "Hang up every call."
 msgstr "Raccrocher tous les appels."
 
 #: src/cli/main.cpp
+#, fuzzy
 msgid ""
-"Turn call control on or off. Calls run over Bluetooth Hands-Free; the audio "
-"stays on the iPhone."
+"Turn call control on or off. Calls run over Bluetooth Hands-Free. With "
+"PipeWire holding Hands-Free, calls answered or placed here play on this "
+"computer."
 msgstr ""
 "Activer ou désactiver la gestion des appels. Les appels passent par le mode "
 "mains libres Bluetooth ; l'audio reste sur l'iPhone."
@@ -329,12 +331,10 @@ msgstr ""
 "compte.\n"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "Writing {} needs root. Run this with sudo.\n"
 msgstr "L'écriture de {} nécessite root. Lancez ceci avec sudo.\n"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "Could not write {}.\n"
 msgstr "Impossible d'écrire {}.\n"
 
@@ -405,7 +405,6 @@ msgid "Adapter"
 msgstr "Adaptateur"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "powered={0} central={1} peripheral={2} advertising={3} class={4}"
 msgstr "alimenté={0} central={1} périphérique={2} annonce={3} classe={4}"
 
@@ -418,7 +417,6 @@ msgid "wrong"
 msgstr "incorrecte"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "secure-connections={}"
 msgstr "Secure Connections={}"
 
@@ -468,7 +466,6 @@ msgid "in use"
 msgstr "utilisé"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "Controller {} is not present; using the first powered one instead."
 msgstr "L'adaptateur {} est absent ; le premier adaptateur allumé est utilisé."
 
@@ -531,8 +528,8 @@ msgid ""
 "buds over by disconnecting them. See DeviceID in /etc/bluetooth/main.conf."
 msgstr ""
 "Cet ordinateur ne se présente pas comme du matériel Apple ; un appel confie "
-"donc les AirPods en les déconnectant. Voir DeviceID dans /etc/bluetooth/"
-"main.conf."
+"donc les AirPods en les déconnectant. Voir DeviceID dans /etc/bluetooth/main."
+"conf."
 
 #: src/cli/main.cpp
 msgid "Could not reach the daemon.\n"
@@ -644,7 +641,6 @@ msgid "no carrier"
 msgstr "aucun opérateur"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid " signal {0}/5 battery {1}/5"
 msgstr " signal {0}/5 batterie {1}/5"
 
@@ -698,14 +694,12 @@ msgstr ""
 "Aucune conversation pour l'instant. Vérifiez avec 'tether --bt-connection'.\n"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "({} unread)"
 msgid_plural "({} unread)"
 msgstr[0] "({} non lu)"
 msgstr[1] "({} non lus)"
 
 #: src/cli/main.cpp src/gtk/devices_view.cpp
-#, c++-format
 msgid ""
 "The running tetherd is {}, but this is tether {}. Stop it and it\n"
 "restarts on demand:\n"
@@ -946,15 +940,14 @@ msgstr[1] "%zu appareils trouvés en %.1fs\n"
 #: src/cli/main.cpp
 msgid ""
 "The daemon is not running, and could not be started. Check the log in "
-"$XDG_STATE_HOME/tether, or start it with 'systemctl --user start "
-"tetherd.service'.\n"
+"$XDG_STATE_HOME/tether, or start it with 'systemctl --user start tetherd."
+"service'.\n"
 msgstr ""
 "Le démon ne tourne pas et n'a pas pu être démarré. Consultez le journal dans "
-"$XDG_STATE_HOME/tether, ou lancez-le avec 'systemctl --user start "
-"tetherd.service'.\n"
+"$XDG_STATE_HOME/tether, ou lancez-le avec 'systemctl --user start tetherd."
+"service'.\n"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "No daemon answered at {}:{}.\n"
 msgstr "Aucun démon n'a répondu sur {}:{}.\n"
 
@@ -975,7 +968,6 @@ msgid "No paired device with that fingerprint.\n"
 msgstr "Aucun appareil appairé avec cette empreinte.\n"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "Transfer Failed: {}"
 msgstr "Échec du transfert : {}"
 
@@ -1054,7 +1046,6 @@ msgstr ""
 "portée.\n"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "Expected on or off, e.g. {} on\n"
 msgstr "Attendu on ou off, p. ex. {} on\n"
 
@@ -1094,7 +1085,6 @@ msgid "Expected a controller, e.g. --bt-adapter hci1, or --bt-adapter auto\n"
 msgstr "Adaptateur attendu, par ex. --bt-adapter hci1, ou --bt-adapter auto\n"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "No Bluetooth controller matches '{}'. Available:\n"
 msgstr "Aucun adaptateur Bluetooth ne correspond à « {} ». Disponibles :\n"
 
@@ -1104,7 +1094,6 @@ msgid "Controller selection is automatic: the first powered one.\n"
 msgstr "La sélection de l'adaptateur est automatique : le premier allumé.\n"
 
 #: src/cli/main.cpp
-#, c++-format
 msgid "Using controller {}."
 msgstr "Utilisation de l'adaptateur {}."
 
@@ -1266,11 +1255,10 @@ msgid ""
 "the list is out of date. Update it in groups.json before replying."
 msgstr ""
 "Quelqu'un qui ne figure pas dans la liste des membres enregistrée de ce "
-"groupe y a écrit ; la liste est donc obsolète. Mettez-la à jour dans "
-"groups.json avant de répondre."
+"groupe y a écrit ; la liste est donc obsolète. Mettez-la à jour dans groups."
+"json avant de répondre."
 
 #: src/core/src/bluetooth/groups.cpp
-#, c++-format
 msgid "The roster for this group contains an unusable address: {}"
 msgstr ""
 "La liste des membres de ce groupe contient une adresse inutilisable : {}"
@@ -1295,17 +1283,14 @@ msgstr ""
 "de répondre."
 
 #: src/core/src/bluetooth/groups.cpp
-#, c++-format
 msgid "\"{}\" is not in your contacts."
 msgstr "« {} » ne figure pas dans vos contacts."
 
 #: src/core/src/bluetooth/groups.cpp
-#, c++-format
 msgid "\"{}\" matches more than one contact address."
 msgstr "« {} » correspond à plusieurs adresses de contact."
 
 #: src/core/src/bluetooth/groups.cpp
-#, c++-format
 msgid "\"{0}\" resolved to an unusable address: {1}"
 msgstr "« {0} » a donné une adresse inutilisable : {1}"
 
@@ -1341,9 +1326,9 @@ msgstr ""
 
 #: src/core/src/bluetooth/objects.cpp
 msgid ""
-"Notification mirroring needs BlueZ's experimental bearer API "
-"(org.bluez.Bearer.LE1), which bluetoothd is not exposing. Set this up before "
-"pairing: a bond made without it has no LE half."
+"Notification mirroring needs BlueZ's experimental bearer API (org.bluez."
+"Bearer.LE1), which bluetoothd is not exposing. Set this up before pairing: a "
+"bond made without it has no LE half."
 msgstr ""
 "La duplication des notifications nécessite l'API bearer expérimentale de "
 "BlueZ (org.bluez.Bearer.LE1), que bluetoothd n'expose pas. Configurez-la "
@@ -1404,7 +1389,6 @@ msgid "Could not prepare the ANCS advertisement."
 msgstr "Impossible de préparer l'annonce ANCS."
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid "Could not advertise for ANCS: {}"
 msgstr "Impossible d'annoncer pour ANCS : {}"
 
@@ -1413,7 +1397,6 @@ msgid "Bluetooth is unavailable."
 msgstr "Bluetooth est indisponible."
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid ""
 "{0} wants to pair.\n"
 "\n"
@@ -1440,7 +1423,6 @@ msgid "Cancel"
 msgstr "Annuler"
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid ""
 "Device {} is not visible to BlueZ. Unlock the iPhone and open its Bluetooth "
 "settings so it is discoverable, then try again."
@@ -1453,7 +1435,6 @@ msgid "Could not register a Bluetooth pairing agent."
 msgstr "Impossible d'enregistrer un agent d'appairage Bluetooth."
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid ""
 "The pairing code could not be shown for confirmation: this computer has no "
 "display, and whatever started the pairing did not answer either. Run tether "
@@ -1473,7 +1454,6 @@ msgid "The iPhone declined the pairing request."
 msgstr "L'iPhone a refusé la demande d'appairage."
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid ""
 "The iPhone refused the connection before pairing started{0}. Delete every "
 "entry for this computer on the iPhone (Settings -> Bluetooth, there can be "
@@ -1488,12 +1468,10 @@ msgid "Pairing did not complete. Confirm the prompt on the iPhone."
 msgstr "L'appairage ne s'est pas terminé. Confirmez l'invite sur l'iPhone."
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid "Pairing failed: {}"
 msgstr "Échec de l'appairage : {}"
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid "Paired with {}."
 msgstr "Appairé avec {}."
 
@@ -1516,12 +1494,10 @@ msgstr ""
 "systemctl restart bluetooth) et réessayez."
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid "Device {} is not known to BlueZ."
 msgstr "L'appareil {} est inconnu de BlueZ."
 
 #: src/core/src/bluetooth/pairing.cpp
-#, c++-format
 msgid "Could not remove the bond: {}"
 msgstr "Impossible de supprimer le lien : {}"
 
@@ -1558,7 +1534,6 @@ msgstr "Synchroniser les contacts"
 
 #. TRANSLATORS: {} is an iPhone Settings toggle name.
 #: src/core/src/bluetooth/profile_supervisor.cpp
-#, c++-format
 msgid ""
 "Enable \"{}\" for this computer in the iPhone's Settings > Bluetooth > (i). "
 "This is a permission, not a pairing problem."
@@ -1568,7 +1543,6 @@ msgstr ""
 
 #. TRANSLATORS: {0} is Messages or Contacts, {1} is the profile name (map or pbap).
 #: src/core/src/bluetooth/profile_supervisor.cpp
-#, c++-format
 msgid ""
 "{0} is unavailable because another computer is using the iPhone's {1} "
 "session. Disconnect it there, then this will connect on its own."
@@ -1578,7 +1552,6 @@ msgstr ""
 
 #. TRANSLATORS: {0} is Messages or Contacts, {1} is an iPhone Settings toggle name.
 #: src/core/src/bluetooth/profile_supervisor.cpp
-#, c++-format
 msgid ""
 "{0} could not be fetched from the iPhone. Usually another computer holds the "
 "phone's Bluetooth session, or \"{1}\" is off in Settings > Bluetooth > (i). "
@@ -1590,12 +1563,10 @@ msgstr ""
 "solution."
 
 #: src/core/src/bluetooth/profile_supervisor.cpp
-#, c++-format
 msgid "{} is unreachable; waiting for the iPhone to come back."
 msgstr "{} est injoignable ; en attente du retour de l'iPhone."
 
 #: src/core/src/bluetooth/profile_supervisor.cpp
-#, c++-format
 msgid ""
 "{} needs BlueZ's OBEX daemon, which is not installed on this computer. "
 "Install it (bluez-obex on Arch, bluez-obexd on Debian and Ubuntu). Nothing "
@@ -1606,7 +1577,6 @@ msgstr ""
 "Ubuntu). Rien à changer sur l'iPhone."
 
 #: src/core/src/bluetooth/profile_supervisor.cpp
-#, c++-format
 msgid "{} could not be opened."
 msgstr "Impossible d'ouvrir {}."
 
@@ -1641,6 +1611,11 @@ msgstr ""
 #: src/core/src/bluetooth/telephony.cpp
 msgid "Calls are controlled here; the audio plays on the iPhone."
 msgstr "Les appels se pilotent ici ; l'audio est diffusé sur l'iPhone."
+
+#: src/core/src/bluetooth/telephony.cpp
+#, fuzzy
+msgid "Could not reach the audio server to mute the microphone."
+msgstr "Impossible de lire la batterie des AirPods depuis le démon.\n"
 
 #: src/core/src/bluetooth/telephony.cpp
 msgid "This computer is not carrying the call audio; it plays on the iPhone."
@@ -1711,17 +1686,15 @@ msgid ""
 msgstr ""
 "L'iPhone a été invité à proposer de nouveau l'accès aux notifications. "
 "Surveillez l'état de la connexion. S'il ne devient pas actif en une ou deux "
-"minutes, désactivez puis réactivez « Afficher les notifications de "
-"messages » dans Réglages > Bluetooth > (i) : l'autorisation doit parfois "
-"être redonnée même lorsqu'elle semble déjà activée."
+"minutes, désactivez puis réactivez « Afficher les notifications de messages "
+"» dans Réglages > Bluetooth > (i) : l'autorisation doit parfois être "
+"redonnée même lorsqu'elle semble déjà activée."
 
 #: src/core/src/net.cpp
-#, c++-format
 msgid "Sent {}"
 msgstr "{} envoyé"
 
 #: src/core/src/net.cpp
-#, c++-format
 msgid "Send failed: {}"
 msgstr "Échec de l'envoi : {}"
 
@@ -1735,7 +1708,6 @@ msgstr "Impossible de joindre le démon Tether."
 
 #. TRANSLATORS: {0} is the device name, {1} is a shortened key fingerprint.
 #: src/core/src/net.cpp
-#, c++-format
 msgid "{0} ({1}) wants to pair with this device."
 msgstr "{0} ({1}) veut s'appairer avec cet appareil."
 
@@ -1764,6 +1736,10 @@ msgstr ""
 "s'annoncer sur le réseau. Démarrez-le avec : sudo systemctl enable --now "
 "avahi-daemon"
 
+#: src/daemon/main.cpp src/gtk/calls_view.cpp
+msgid "Unknown caller"
+msgstr "Appelant inconnu"
+
 #: src/daemon/notification.cpp
 msgid "File arrived"
 msgstr "Fichier reçu"
@@ -1776,7 +1752,7 @@ msgstr "Ouvrir le fichier"
 msgid "Open Folder"
 msgstr "Ouvrir le dossier"
 
-#: src/daemon/notification.cpp
+#: src/daemon/notification.cpp src/gtk/messages_view.cpp
 msgid "Reply"
 msgstr "Répondre"
 
@@ -1785,9 +1761,34 @@ msgid "Copy Code"
 msgstr "Copier le code"
 
 #: src/daemon/notification.cpp
-#, c++-format
 msgid "Open in {}"
 msgstr "Ouvrir dans {}"
+
+#: src/daemon/notification.cpp
+#, fuzzy
+msgid "{} is calling"
+msgstr "Numérotation"
+
+#: src/daemon/notification.cpp
+msgid "Phone"
+msgstr ""
+
+#: src/daemon/notification.cpp src/gtk/calls_view.cpp
+msgid "Answer on laptop"
+msgstr ""
+
+#: src/daemon/notification.cpp src/gtk/calls_view.cpp
+#, fuzzy
+msgid "Answer on iPhone"
+msgstr "Connectez votre iPhone"
+
+#: src/daemon/notification.cpp src/gtk/calls_view.cpp
+msgid "Decline"
+msgstr "Refuser"
+
+#: src/gtk/calls_view.cpp
+msgid "Mute microphone"
+msgstr ""
 
 #: src/gtk/calls_view.cpp
 msgid "Incoming"
@@ -1823,31 +1824,50 @@ msgstr "Aucun service"
 
 #. TRANSLATORS: Cellular signal strength read aloud, {} is 0 to 5.
 #: src/gtk/calls_view.cpp
-#, c++-format
 msgid "signal {} of 5"
 msgstr "signal {} sur 5"
 
 #. TRANSLATORS: The iPhone's battery level read aloud, {} is like "80%".
 #: src/gtk/calls_view.cpp
-#, c++-format
 msgid "battery {}"
 msgstr "batterie {}"
-
-#: src/gtk/calls_view.cpp
-msgid "Unknown caller"
-msgstr "Appelant inconnu"
 
 #: src/gtk/calls_view.cpp
 msgid "Answer"
 msgstr "Répondre"
 
 #: src/gtk/calls_view.cpp
-msgid "Audio here"
-msgstr "Prendre l'audio ici"
+#, fuzzy
+msgid "Audio on this computer"
+msgstr "L'audio de l'appel arrive sur cet ordinateur."
 
 #: src/gtk/calls_view.cpp
-msgid "Decline"
-msgstr "Refuser"
+msgid "To move it back, pick iPhone under Audio on the phone's call screen."
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Move to laptop"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Play this call on the laptop's speakers and mic."
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Call volume and mute"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Resume"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Hold"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Keypad"
+msgstr ""
 
 #: src/gtk/calls_view.cpp
 msgid "Hang up"
@@ -1868,12 +1888,38 @@ msgid "Number to call"
 msgstr "Numéro à appeler"
 
 #: src/gtk/calls_view.cpp
-msgid "Call"
-msgstr "Appeler"
+msgid "Call from laptop"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "Place the call with its audio on this computer."
+msgstr "L'audio de l'appel arrive sur cet ordinateur."
+
+#: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "Call on iPhone"
+msgstr "Lister les appels sur l'iPhone."
+
+#: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "Place the call with its audio on the iPhone."
+msgstr "Passer un appel depuis l'iPhone."
 
 #: src/gtk/calls_view.cpp
 msgid "The iPhone's carrier, signal, and battery."
 msgstr "Opérateur, signal et batterie de l'iPhone."
+
+#: src/gtk/calls_view.cpp
+msgid "Always use laptop for calls"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "Every call plays on this computer, even ones answered on the iPhone."
+msgstr ""
+"Transférer l'audio de l'appel vers cet ordinateur, ou le renvoyer vers "
+"l'iPhone."
 
 #: src/gtk/contacts_view.cpp
 msgid "Copy"
@@ -1881,7 +1927,6 @@ msgstr "Copier"
 
 #. TRANSLATORS: Spoken name of the copy button beside a phone number or email.
 #: src/gtk/contacts_view.cpp
-#, c++-format
 msgid "Copy {}"
 msgstr "Copier {}"
 
@@ -1896,7 +1941,6 @@ msgstr "Envoyer un message"
 #. TRANSLATORS: Spoken name of the message button beside a phone
 #. number or email.
 #: src/gtk/contacts_view.cpp
-#, c++-format
 msgid "Message {}"
 msgstr "Envoyer un message à {}"
 
@@ -2013,8 +2057,8 @@ msgstr "Les AirPods sont confiés avec le transfert natif d'Apple."
 #: src/gtk/devices_view.cpp
 msgid ""
 "The buds are handed over by disconnecting them. For Apple's own handoff, put "
-"DeviceID = bluetooth:004C:0000:0000 under [General] in /etc/bluetooth/"
-"main.conf and restart bluetooth."
+"DeviceID = bluetooth:004C:0000:0000 under [General] in /etc/bluetooth/main."
+"conf and restart bluetooth."
 msgstr ""
 "Les AirPods sont confiés en les déconnectant. Pour le transfert natif "
 "d'Apple, ajoutez DeviceID = bluetooth:004C:0000:0000 sous [General] dans /"
@@ -2060,7 +2104,6 @@ msgstr ""
 "L'appareil est hors ligne. Vérifiez qu'il est allumé et sur le même réseau."
 
 #: src/gtk/devices_view.cpp
-#, c++-format
 msgid "Found at {0}:{1}"
 msgstr "Trouvé à {0}:{1}"
 
@@ -2116,13 +2159,11 @@ msgstr "Demande à l'iPhone d'afficher ses autorisations Bluetooth…"
 
 #. TRANSLATORS: {} is a file name.
 #: src/gtk/devices_view.cpp
-#, c++-format
 msgid "Sending {}…"
 msgstr "Envoi de {}…"
 
 #. TRANSLATORS: {0} is the current file's position, {1} the batch size.
 #: src/gtk/devices_view.cpp
-#, c++-format
 msgid "({0} of {1})"
 msgstr "({0} sur {1})"
 
@@ -2209,7 +2250,6 @@ msgid "Paired"
 msgstr "Appairé"
 
 #: src/gtk/devices_view.cpp
-#, c++-format
 msgid "Waiting for approval on {0}..."
 msgstr "En attente de l'approbation sur {0}…"
 
@@ -2242,14 +2282,12 @@ msgid "Ready"
 msgstr "Prêt"
 
 #: src/gtk/devices_view.cpp
-#, c++-format
 msgid "Sent {0} of {1} file."
 msgid_plural "Sent {0} of {1} files."
 msgstr[0] "{0} fichier envoyé sur {1}."
 msgstr[1] "{0} fichiers envoyés sur {1}."
 
 #: src/gtk/devices_view.cpp
-#, c++-format
 msgid "Skipped {} non-file item."
 msgid_plural "Skipped {} non-file items."
 msgstr[0] "{} élément non fichier ignoré."
@@ -2521,23 +2559,43 @@ msgid "%A, %b %-d"
 msgstr "%A %-d %b"
 
 #: src/gtk/messages_view.cpp src/gtk/tray.cpp
-#, c++-format
 msgid "{} unread message"
 msgid_plural "{} unread messages"
 msgstr[0] "{} message non lu"
 msgstr[1] "{} messages non lus"
 
+#: src/gtk/messages_view.cpp
+msgid "Sending…"
+msgstr "Envoi…"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} reply"
+msgid_plural "{} replies"
+msgstr[0] "Répondre"
+msgstr[1] "Répondre"
+
+#: src/gtk/messages_view.cpp
+msgid "Replying to {}"
+msgstr ""
+
 #. TRANSLATORS: Read aloud before a message you sent, {} is the message.
 #: src/gtk/messages_view.cpp
-#, c++-format
 msgid "Sent: {}"
 msgstr "Envoyé : {}"
 
 #. TRANSLATORS: Read aloud before a message you received, {} is the message.
 #: src/gtk/messages_view.cpp
-#, c++-format
 msgid "Received: {}"
 msgstr "Reçu : {}"
+
+#: src/gtk/messages_view.cpp
+msgid "React"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Sent"
+msgstr "Envoyé"
 
 #: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
@@ -2546,10 +2604,6 @@ msgstr "Une connexion Bluetooth est nécessaire pour synchroniser les messages."
 #: src/gtk/messages_view.cpp
 msgid "Select a conversation"
 msgstr "Sélectionnez une conversation"
-
-#: src/gtk/messages_view.cpp
-msgid "Sending…"
-msgstr "Envoi…"
 
 #: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
@@ -2573,8 +2627,18 @@ msgid "Could not reach the Tether daemon; the message was not sent."
 msgstr "Impossible de joindre le démon Tether ; le message n'a pas été envoyé."
 
 #: src/gtk/messages_view.cpp
-msgid "Sent"
-msgstr "Envoyé"
+msgid "Reaction sent"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "The reaction was not sent."
+msgstr "Le message n'a pas été envoyé."
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Message @{}"
+msgstr "Envoyer un message à {}"
 
 #: src/gtk/messages_view.cpp
 msgid "New Message"
@@ -2593,6 +2657,15 @@ msgid "Phone number or email"
 msgstr "Numéro de téléphone ou e-mail"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Cancel reply"
+msgstr "Annuler"
+
+#: src/gtk/messages_view.cpp
+msgid "Emoji (Ctrl+.)"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
 msgid "Send"
 msgstr "Envoyer"
 
@@ -2606,7 +2679,6 @@ msgstr "Ignorer sur l'iPhone"
 
 #. TRANSLATORS: Spoken name of the dismiss button on a notification from the named app.
 #: src/gtk/notifications_view.cpp
-#, c++-format
 msgid "Dismiss {} notification"
 msgstr "Ignorer la notification de {}"
 
@@ -2625,6 +2697,15 @@ msgstr "Aucune notification pour l'instant."
 #: src/gtk/notifications_view.cpp
 msgid "Notification mirroring is unavailable."
 msgstr "La duplication des notifications est indisponible."
+
+#: src/gtk/notifications_view.cpp
+#, fuzzy
+msgid "Mute notifications"
+msgstr "Nouvelle notification"
+
+#: src/gtk/notifications_view.cpp
+msgid "No desktop popups for messages or iPhone apps. Calls still ring."
+msgstr ""
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2801,7 +2882,6 @@ msgstr "non connecté"
 #. TRANSLATORS: {} is a transport name, "Wi-Fi" or "Bluetooth", or a device name.
 #. TRANSLATORS: {} is a transport name, "Wi-Fi" or "Bluetooth".
 #: src/gtk/tray.cpp src/gtk/ui_util.cpp
-#, c++-format
 msgid "{}: {}"
 msgstr "{} : {}"
 
@@ -2825,6 +2905,12 @@ msgstr "Appairez des appareils et synchronisez le presse-papiers sur le réseau"
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr ""
 "iPhone;iOS;SMS;Messages;Presse-papiers;Fichiers;Notifications;Appels;AirPods;"
+
+#~ msgid "Audio here"
+#~ msgstr "Prendre l'audio ici"
+
+#~ msgid "Call"
+#~ msgstr "Appeler"
 
 #~ msgid ""
 #~ "Where messages and contacts are stored on this computer. Encrypted keeps "
@@ -2857,11 +2943,6 @@ msgstr ""
 #~ "Répondez et passez des appels depuis l'onglet Appels. Nécessite hfp_hf "
 #~ "dans bluez5.roles et le service D-Bus de téléphonie de PipeWire, que "
 #~ "Tether n'installe ni l'un ni l'autre."
-
-#~ msgid "Move call audio to this computer, or back to the iPhone."
-#~ msgstr ""
-#~ "Transférer l'audio de l'appel vers cet ordinateur, ou le renvoyer vers "
-#~ "l'iPhone."
 
 #~ msgid ""
 #~ "Turn call control on or off. Needs the hfp_hf role and telephony service "
