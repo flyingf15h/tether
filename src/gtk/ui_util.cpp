@@ -5,6 +5,8 @@
 #include <tether/i18n.hpp>
 #include <tether/version.hpp>
 
+#include <cmath>
+
 namespace tether::ui {
 
     namespace {
@@ -295,6 +297,114 @@ namespace tether::ui {
         atk_object_set_description(gtk_widget_get_accessible(r.label), detail.c_str());
 
         tray_set_route(route, ok, detail);
+    }
+
+    namespace {
+
+        struct Avatar {
+            GdkPixbuf* pixbuf = nullptr;
+            std::string initials;
+            double r = 0, g = 0, b = 0;
+            int size = 0;
+        };
+
+        void free_avatar(gpointer data) {
+            auto* avatar = static_cast<Avatar*>(data);
+            if (avatar->pixbuf)
+                g_object_unref(avatar->pixbuf);
+            delete avatar;
+        }
+
+        std::string initials_of(const std::string& name) {
+            std::string out;
+            bool at_word = true;
+            for (const char* p = name.c_str(); *p && out.size() < 8;) {
+                const gunichar c = g_utf8_get_char(p);
+                if (g_unichar_isspace(c)) {
+                    at_word = true;
+                } else if (at_word) {
+                    at_word = false;
+                    if (g_unichar_isalnum(c)) {
+                        char buf[6];
+                        out.append(buf, g_unichar_to_utf8(g_unichar_toupper(c), buf));
+                        if (g_utf8_strlen(out.c_str(), -1) == 2)
+                            break;
+                    }
+                }
+                p = g_utf8_next_char(p);
+            }
+            return out.empty() ? "#" : out;
+        }
+
+        gboolean draw_avatar(GtkWidget* widget, cairo_t* cr, gpointer data) {
+            const auto* avatar = static_cast<Avatar*>(data);
+            const double size = avatar->size;
+            cairo_arc(cr, size / 2, size / 2, size / 2, 0, 2 * M_PI);
+            cairo_clip(cr);
+            if (avatar->pixbuf) {
+                const int w = gdk_pixbuf_get_width(avatar->pixbuf);
+                const int h = gdk_pixbuf_get_height(avatar->pixbuf);
+                gdk_cairo_set_source_pixbuf(cr, avatar->pixbuf, (size - w) / 2.0, (size - h) / 2.0);
+                cairo_paint(cr);
+                return TRUE;
+            }
+            cairo_set_source_rgb(cr, avatar->r, avatar->g, avatar->b);
+            cairo_paint(cr);
+
+            PangoLayout* layout = gtk_widget_create_pango_layout(widget, avatar->initials.c_str());
+            PangoFontDescription* font = pango_font_description_new();
+            pango_font_description_set_weight(font, PANGO_WEIGHT_BOLD);
+            pango_font_description_set_absolute_size(font, size * 0.4 * PANGO_SCALE);
+            pango_layout_set_font_description(layout, font);
+            int tw = 0, th = 0;
+            pango_layout_get_pixel_size(layout, &tw, &th);
+            cairo_set_source_rgb(cr, 1, 1, 1);
+            cairo_move_to(cr, (size - tw) / 2.0, (size - th) / 2.0);
+            pango_cairo_show_layout(cr, layout);
+            pango_font_description_free(font);
+            g_object_unref(layout);
+            return TRUE;
+        }
+
+    } // namespace
+
+    GtkWidget* avatar_new(const std::string& photo_path, const std::string& name, int size) {
+        auto* avatar = new Avatar;
+        avatar->size = size;
+        avatar->initials = initials_of(name);
+
+        if (!photo_path.empty()) {
+            if (GdkPixbuf* raw = gdk_pixbuf_new_from_file(photo_path.c_str(), nullptr)) {
+                // Cover the circle: scale the short side to fit, crop the long one.
+                const double w = gdk_pixbuf_get_width(raw), h = gdk_pixbuf_get_height(raw);
+                const double scale = size / std::min(w, h);
+                avatar->pixbuf = gdk_pixbuf_scale_simple(raw,
+                                                         std::max(1, static_cast<int>(std::lround(w * scale))),
+                                                         std::max(1, static_cast<int>(std::lround(h * scale))),
+                                                         GDK_INTERP_BILINEAR);
+                g_object_unref(raw);
+            }
+        }
+
+        // A stable colour per name, from a small palette that holds white text.
+        static const double palette[][3] = {{0.35, 0.40, 0.95},
+                                            {0.23, 0.65, 0.36},
+                                            {0.98, 0.65, 0.10},
+                                            {0.93, 0.26, 0.27},
+                                            {0.92, 0.27, 0.62},
+                                            {0.00, 0.66, 0.99},
+                                            {0.61, 0.52, 0.93},
+                                            {0.10, 0.74, 0.61}};
+        const auto& colour = palette[g_str_hash(name.c_str()) % G_N_ELEMENTS(palette)];
+        avatar->r = colour[0];
+        avatar->g = colour[1];
+        avatar->b = colour[2];
+
+        GtkWidget* area = gtk_drawing_area_new();
+        gtk_widget_set_size_request(area, size, size);
+        gtk_widget_set_valign(area, GTK_ALIGN_CENTER);
+        g_signal_connect_data(area, "draw", G_CALLBACK(draw_avatar), avatar, (GClosureNotify)free_avatar, GConnectFlags(0));
+        return area;
     }
 
 } // namespace tether::ui

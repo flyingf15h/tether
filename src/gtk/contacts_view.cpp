@@ -156,7 +156,10 @@ namespace tether::ui {
             gtk_label_set_xalign(GTK_LABEL(title), 0.0);
             gtk_label_set_ellipsize(GTK_LABEL(title), PANGO_ELLIPSIZE_END);
             gtk_label_set_max_width_chars(GTK_LABEL(title), 28);
-            gtk_expander_set_label_widget(GTK_EXPANDER(expander), title);
+            GtkWidget* heading = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+            gtk_box_pack_start(GTK_BOX(heading), avatar_new(contact.value("photo", ""), name, 32), FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(heading), title, TRUE, TRUE, 0);
+            gtk_expander_set_label_widget(GTK_EXPANDER(expander), heading);
 
             GtkWidget* addresses = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
             gtk_widget_set_margin_top(addresses, 6);

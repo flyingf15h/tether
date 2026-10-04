@@ -218,8 +218,10 @@ namespace tether::ui {
                 G_OBJECT(row), "reply_reason", g_strdup(thread.value("reply_reason", "").c_str()), g_free);
             g_object_set_data(G_OBJECT(row), "group", GINT_TO_POINTER(thread.value("group", false) ? 1 : 0));
 
-            GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+            GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
             gtk_container_set_border_width(GTK_CONTAINER(box), 10);
+
+            gtk_box_pack_start(GTK_BOX(box), avatar_new(thread.value("photo", ""), name, 40), FALSE, FALSE, 0);
 
             GtkWidget* labels = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
 

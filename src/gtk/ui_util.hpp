@@ -48,4 +48,8 @@ namespace tether::ui {
     // next step, so they are passed through verbatim rather than summarised.
     void set_route_status(Route route, bool ok, const std::string& detail);
 
+    // A round contact picture `size` pixels across, drawn from `photo_path`, or
+    // the name's initials on a colour picked from the name when there is none.
+    GtkWidget* avatar_new(const std::string& photo_path, const std::string& name, int size);
+
 } // namespace tether::ui

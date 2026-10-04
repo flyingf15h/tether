@@ -1,4 +1,5 @@
 #include "tether/bluetooth/vcard.hpp"
+#include "tether/base64.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -158,6 +159,12 @@ namespace tether::bluetooth {
                 current.name = vcard_unescape(value);
             else if (name == "N")
                 structured_name = vcard_name_from_n(vcard_unescape(value));
+            else if (name == "PHOTO" && value.rfind("http", 0) != 0) {
+                // vCard 3.0 inlines it as ENCODING=b base64; a data: URI carries the same after its comma.
+                const size_t comma = value.rfind("data:", 0) == 0 ? value.find(',') : std::string::npos;
+                const auto bytes = base64_decode(comma == std::string::npos ? value : value.substr(comma + 1));
+                current.photo.assign(bytes.begin(), bytes.end());
+            }
         }
 
         if (in_card)

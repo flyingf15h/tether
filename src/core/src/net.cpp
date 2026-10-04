@@ -739,6 +739,8 @@ namespace tether {
                 // never change which conversation a message belongs to.
                 if (auto name = bluetooth::contact_store().name_for(thread.key); !name.empty())
                     entry["name"] = name;
+                if (auto photo = bluetooth::contact_store().photo_for(thread.key); !photo.empty())
+                    entry["photo"] = photo;
                 entry["group"] = thread.key.rfind("group:", 0) == 0;
                 threads.push_back(std::move(entry));
             }
@@ -813,6 +815,10 @@ namespace tether {
                 if (addresses.empty())
                     continue;
                 entry["addresses"] = std::move(addresses);
+                std::error_code ec;
+                if (const std::string photo = bluetooth::contact_photo_path(card.name);
+                    !photo.empty() && std::filesystem::exists(photo, ec))
+                    entry["photo"] = photo;
                 contacts.push_back(std::move(entry));
             }
         }

@@ -19,6 +19,9 @@ namespace tether::bluetooth {
         // messages use, e.g. "tel:+15551234567" or "email:someone@example.com".
         std::string name_for(const std::string& thread_key) const;
 
+        // Path to the contact's picture on disk, or empty when they have none.
+        std::string photo_for(const std::string& thread_key) const;
+
         // Every address a display name maps to. Returns all matches.
         std::vector<std::string> addresses_for_name(const std::string& name) const;
 
@@ -35,6 +38,11 @@ namespace tether::bluetooth {
         // Last ten digits of each contact number, for the national-vs-international fallback in name_for.
         std::map<std::string, std::string> by_tel_suffix_;
     };
+
+    // Where a contact's picture is kept, keyed by display name since that is what
+    // thread keys resolve to. Under the data dir normally, the runtime dir when
+    // retention is off so nothing outlives the session. Empty name, empty path.
+    std::string contact_photo_path(const std::string& name);
 
     std::string contacts_path(Retention mode);
     std::string contacts_path();

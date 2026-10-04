@@ -15,14 +15,66 @@
 
 namespace tether::bluetooth {
 
+    std::string contact_photo_path(const std::string& name) {
+        if (name.empty())
+            return {};
+        std::filesystem::path dir;
+        if (secret::retention() == Retention::None) {
+            const char* runtime = std::getenv("XDG_RUNTIME_DIR");
+            if (!runtime || !*runtime)
+                return {};
+            dir = std::filesystem::path(runtime) / "tether-avatars";
+        } else {
+            const std::filesystem::path data = paths::data_dir();
+            if (data.empty())
+                return {};
+            dir = data / "avatars";
+        }
+        gchar* digest = g_compute_checksum_for_string(G_CHECKSUM_SHA1, name.c_str(), -1);
+        const std::string file = std::string(digest ? digest : "") + ".img";
+        g_free(digest);
+        return (dir / file).string();
+    }
+
+    namespace {
+
+        // Pictures go to their own files rather than the contacts cache, so a
+        // reload from that cache (which has none) keeps the faces it had.
+        void save_photo(const VCard& card) {
+            const std::string path = contact_photo_path(card.name);
+            if (path.empty() || card.photo.empty())
+                return;
+            std::error_code ec;
+            const auto dir = std::filesystem::path(path).parent_path();
+            std::filesystem::create_directories(dir, ec);
+            std::filesystem::permissions(dir, std::filesystem::perms::owner_all, ec);
+            const std::string tmp = path + ".tmp";
+            const int fd = ::open(tmp.c_str(), O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
+            if (fd < 0)
+                return;
+            const bool ok = ::write(fd, card.photo.data(), card.photo.size()) == static_cast<ssize_t>(card.photo.size());
+            ::close(fd);
+            if (ok)
+                std::filesystem::rename(tmp, path, ec);
+            else
+                std::filesystem::remove(tmp, ec);
+        }
+
+    } // namespace
+
     void ContactStore::set(std::vector<VCard> contacts) {
         contacts_ = std::move(contacts);
         by_key_.clear();
         by_tel_suffix_.clear();
 
-        for (const auto& card : contacts_) {
+        for (auto& card : contacts_) {
             if (card.name.empty())
                 continue;
+            if (!card.photo.empty()) {
+                save_photo(card);
+                // On disk now; no need to hold every picture in memory too.
+                std::string().swap(card.photo);
+            }
             for (const auto& tel : card.tels) {
                 std::string normalized = normalize_phone(tel);
                 if (normalized.empty())
@@ -54,6 +106,12 @@ namespace tether::bluetooth {
             }
         }
         return {};
+    }
+
+    std::string ContactStore::photo_for(const std::string& thread_key) const {
+        const std::string path = contact_photo_path(name_for(thread_key));
+        std::error_code ec;
+        return !path.empty() && std::filesystem::exists(path, ec) ? path : std::string{};
     }
 
     std::vector<std::string> ContactStore::addresses_for_name(const std::string& name) const {

@@ -12,6 +12,8 @@ namespace tether::bluetooth {
         std::string name;
         std::vector<std::string> tels;
         std::vector<std::string> emails;
+        // The contact's picture as the phone sent it (decoded JPEG/PNG bytes), or empty.
+        std::string photo;
 
         bool empty() const { return name.empty() && tels.empty() && emails.empty(); }
     };

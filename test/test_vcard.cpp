@@ -414,3 +414,18 @@ TEST(ContactStore, AnInterruptedMigrationKeepsTheDestinationNotTheSource) {
     EXPECT_EQ(loaded.name_for("tel:+15550000009"), "") << "the stale source won over the destination";
     EXPECT_FALSE(std::filesystem::exists(scoped.store() / "contacts.json")) << "the plaintext copy is still on disk";
 }
+
+TEST(VCard, DecodesInlinePhoto) {
+    // "PNG!" in base64, folded across two lines the way iOS folds long values.
+    const std::string text = "BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Ada\r\nTEL:+15551234567\r\n"
+                             "PHOTO;ENCODING=b;TYPE=JPEG:UE5\r\n HIQ==\r\nEND:VCARD\r\n";
+    auto cards = parse_vcards(text);
+    ASSERT_EQ(cards.size(), 1u);
+    EXPECT_EQ(cards[0].photo, "PNG!");
+}
+
+TEST(VCard, IgnoresLinkedPhoto) {
+    auto cards = parse_vcards("BEGIN:VCARD\r\nFN:Ada\r\nPHOTO;VALUE=uri:https://example.com/a.jpg\r\nEND:VCARD\r\n");
+    ASSERT_EQ(cards.size(), 1u);
+    EXPECT_TRUE(cards[0].photo.empty());
+}
