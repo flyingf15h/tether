@@ -105,6 +105,11 @@ namespace tether::bluetooth {
     // Returns false only when the handle is unknown.
     bool mark_message_read(const std::string& handle, bool read, std::string& err_out, bool* synced_out = nullptr);
 
+    // Folds history from outside MAP (an iPhone backup) into the store and the
+    // journal. Skips anything already held, by handle or by the same text in the
+    // same conversation within two minutes. Returns how many were added.
+    size_t import_messages(const std::vector<Message>& messages);
+
     // Marks a batch read off the calling thread.
     void mark_messages_read_async(std::vector<std::string> handles, bool read);
 

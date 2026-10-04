@@ -97,7 +97,10 @@ namespace tether::bluetooth {
         if (max_age > 0) {
             const int64_t cutoff = now - max_age;
             // zero timestamp means the phone gave us nothing usable
-            std::erase_if(messages, [&](const Message& m) { return m.timestamp > 0 && m.timestamp < cutoff; });
+            // History imported from a backup is the point of keeping it, so it does not age out.
+            std::erase_if(messages, [&](const Message& m) {
+                return m.timestamp > 0 && m.timestamp < cutoff && m.folder != "backup";
+            });
         }
 
         if (messages.size() > max_messages) {

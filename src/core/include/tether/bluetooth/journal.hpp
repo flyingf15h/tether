@@ -10,7 +10,8 @@
 
 namespace tether::bluetooth {
 
-    inline constexpr size_t JOURNAL_MAX_MESSAGES = 10000;
+    // High enough to hold a whole imported iPhone history.
+    inline constexpr size_t JOURNAL_MAX_MESSAGES = 500000;
     inline constexpr int64_t JOURNAL_MAX_AGE_SECONDS = 90LL * 24 * 3600;
 
     // Encrypted retention keeps messages.ndjson.enc; plaintext keeps the

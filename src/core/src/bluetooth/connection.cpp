@@ -23,13 +23,16 @@
 #include <gio/gio.h>
 #include <mutex>
 #include <thread>
+#include <tuple>
+#include <set>
 
 namespace tether::bluetooth {
 
     ConnectionManager* g_bt_connections = nullptr;
 
     namespace {
-        MessageStore g_messages;
+        // Room for a whole imported history, not only what MAP has shown since pairing.
+        MessageStore g_messages(JOURNAL_MAX_MESSAGES);
         std::mutex g_messages_mutex;
         MessageJournal g_journal;
         std::mutex g_map_mutex;
@@ -138,6 +141,34 @@ namespace tether::bluetooth {
         }
         sent_out = sent;
         return true;
+    }
+
+    size_t import_messages(const std::vector<Message>& messages) {
+        std::lock_guard<std::mutex> lock(g_messages_mutex);
+        // What is already here, keyed loosely enough to catch the same message
+        // arriving once over MAP and once from the backup.
+        std::set<std::tuple<std::string, std::string, int64_t>> seen;
+        for (const auto& thread : g_messages.threads())
+            for (const auto& held : g_messages.messages(thread.key, JOURNAL_MAX_MESSAGES))
+                seen.emplace(thread_bucket(held.thread_key), held.body, held.timestamp / 120);
+
+        size_t added = 0;
+        for (const auto& message : messages) {
+            if (message.handle.empty() || message.thread_key.empty() || g_messages.find(message.handle))
+                continue;
+            const std::string bucket = thread_bucket(message.thread_key);
+            const int64_t slot = message.timestamp / 120;
+            if (seen.count({bucket, message.body, slot}) || seen.count({bucket, message.body, slot - 1}) ||
+                seen.count({bucket, message.body, slot + 1}))
+                continue;
+            if (!g_messages.add(message))
+                continue;
+            g_journal.append(message);
+            seen.emplace(bucket, message.body, slot);
+            ++added;
+        }
+        debug::log(INFO, "bluetooth: imported {} message(s) from outside MAP", added);
+        return added;
     }
 
     void observe_message_notification(const std::string& sender,

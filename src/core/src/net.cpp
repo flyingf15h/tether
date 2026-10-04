@@ -784,7 +784,8 @@ namespace tether {
         {
             std::lock_guard<std::mutex> lock(bluetooth::message_store_mutex());
             const std::string name = bluetooth::contact_store().name_for(thread_key);
-            for (const auto& message : bluetooth::message_store().messages(thread_key)) {
+            // Enough to scroll a long way back once a backup's history is imported.
+            for (const auto& message : bluetooth::message_store().messages(thread_key, 1500)) {
                 auto entry = bluetooth::to_json(message);
                 if (!name.empty() && !message.outgoing)
                     entry["name"] = name;
@@ -1428,6 +1429,43 @@ namespace tether {
                         bluetooth::set_group_replies_enabled(config.group_messages_enabled &&
                                                              config.ancs_content_enabled && config.ancs_enabled);
                         broadcast_local_event(build_bt_status().dump());
+                    } else if (j.contains("command") && j["command"] == "bt_import_messages" && j.contains("path")) {
+                        // One JSON object per line: handle, address, body, timestamp, outgoing, read.
+                        std::ifstream in(j.value("path", std::string{}));
+                        std::vector<bluetooth::Message> incoming;
+                        std::string line;
+                        size_t skipped = 0;
+                        while (std::getline(in, line)) {
+                            auto entry = nlohmann::json::parse(line, nullptr, false);
+                            if (entry.is_discarded() || !entry.is_object()) {
+                                ++skipped;
+                                continue;
+                            }
+                            bluetooth::Recipient recipient;
+                            std::string reason;
+                            if (!bluetooth::recipient_from_input(entry.value("address", std::string{}), recipient, reason)) {
+                                ++skipped;
+                                continue;
+                            }
+                            bluetooth::Message message;
+                            message.handle = entry.value("handle", std::string{});
+                            message.thread_key = bluetooth::thread_key_for(recipient);
+                            message.peer_address = recipient.address;
+                            message.body = entry.value("body", std::string{});
+                            message.timestamp = entry.value("timestamp", static_cast<int64_t>(0));
+                            message.outgoing = entry.value("outgoing", false);
+                            message.read = entry.value("read", true);
+                            message.folder = "backup";
+                            incoming.push_back(std::move(message));
+                        }
+                        const size_t added = bluetooth::import_messages(incoming);
+                        nlohmann::json payload{{"command", "bt_import_result"},
+                                               {"read", incoming.size()},
+                                               {"added", added},
+                                               {"skipped", skipped}};
+                        write_plain_packet(client_fd, payload.dump() + "\n");
+                        broadcast_local_event(build_bt_threads().dump(-1, ' ', false, nlohmann::json::error_handler_t::replace));
+                        continue;
                     } else if (j.contains("command") && j["command"] == "bt_set_calls_on_laptop") {
                         auto config = bluetooth::load_config();
                         config.calls_on_laptop = j.value("enabled", true);
