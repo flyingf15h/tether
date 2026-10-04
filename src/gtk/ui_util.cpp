@@ -32,18 +32,140 @@ namespace tether::ui {
     font-size: 90%;
 }
 
+/* Messages, styled after iMessage. */
 .tether-bubble {
-    padding: 8px 12px;
-    border-radius: 14px;
+    padding: 7px 13px;
+    border-radius: 18px;
+    font-size: 105%;
 }
 
 .tether-bubble-in {
-    background-color: alpha(@theme_fg_color, 0.10);
+    background-color: alpha(@theme_fg_color, 0.13);
 }
 
 .tether-bubble-out {
-    background-color: @theme_selected_bg_color;
-    color: @theme_selected_fg_color;
+    background-color: #0a84ff;
+    color: #ffffff;
+}
+
+.tether-bubble-out link {
+    color: #ffffff;
+}
+
+.tether-bubble-emoji {
+    background-color: transparent;
+    font-size: 300%;
+    padding: 0 2px;
+}
+
+.tether-stamp {
+    font-size: 78%;
+    opacity: 0.55;
+}
+
+.tether-reply-quote {
+    font-size: 88%;
+    opacity: 0.7;
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid alpha(@theme_fg_color, 0.18);
+}
+
+.tether-reaction {
+    font-size: 95%;
+    padding: 1px 6px;
+    border-radius: 12px;
+    background-color: alpha(@theme_fg_color, 0.13);
+    border: 2px solid @theme_base_color;
+    margin-bottom: -6px;
+}
+
+.tether-message-row,
+.tether-message-row:hover {
+    background: none;
+}
+
+button.tether-message-action {
+    min-width: 24px;
+    min-height: 24px;
+    padding: 2px;
+    border-radius: 12px;
+    opacity: 0.7;
+}
+
+button.tether-message-action:hover {
+    opacity: 1;
+}
+
+.tether-conversation-header {
+    border-bottom: 1px solid alpha(@theme_fg_color, 0.10);
+}
+
+.tether-composer {
+    border-radius: 19px;
+    border: 1px solid alpha(@theme_fg_color, 0.22);
+    padding: 2px 3px 2px 12px;
+    background-color: @theme_base_color;
+}
+
+.tether-composer textview,
+.tether-composer textview text,
+.tether-composer scrolledwindow {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.tether-placeholder {
+    opacity: 0.45;
+}
+
+button.tether-composer-button {
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+    border-radius: 15px;
+}
+
+button.tether-send {
+    min-width: 30px;
+    min-height: 30px;
+    padding: 0;
+    border-radius: 15px;
+    border: none;
+    background-image: none;
+    background-color: #0a84ff;
+    color: #ffffff;
+    -gtk-icon-shadow: none;
+}
+
+button.tether-send:disabled {
+    background-color: alpha(@theme_fg_color, 0.18);
+    color: alpha(#ffffff, 0.8);
+}
+
+.tether-reply-bar {
+    font-size: 90%;
+    opacity: 0.8;
+}
+
+/* Conversation list: rounded rows with a blue selection, as in Messages. */
+.tether-thread-list row {
+    border-radius: 10px;
+    margin: 1px 8px;
+}
+
+.tether-thread-list row:selected {
+    background-color: #0a84ff;
+    color: #ffffff;
+}
+
+.tether-thread-list row:selected .muted {
+    opacity: 0.9;
+}
+
+.tether-search {
+    border-radius: 9px;
 }
 
 .tether-route-bar {

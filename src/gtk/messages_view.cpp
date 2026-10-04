@@ -41,6 +41,19 @@ namespace tether::ui {
             GtkWidget* search_entry = nullptr;
             GtkWidget* send_error = nullptr;
             GtkWidget* send_error_label = nullptr;
+            GtkWidget* header_avatar = nullptr;
+            GtkWidget* composer_placeholder = nullptr;
+            GtkWidget* reply_bar = nullptr;
+            GtkWidget* reply_label = nullptr;
+            // The "Sent" under the newest outgoing bubble, moved as new ones arrive.
+            GtkWidget* last_status = nullptr;
+
+            // Body of the message the next send replies to, or empty.
+            std::string reply_to;
+            // A reaction is in flight: its result must not clear what is being typed.
+            bool side_send = false;
+            // Where each rendered message shows its reactions, by body text.
+            std::map<std::string, GtkWidget*> reaction_slots;
 
             std::string selected_thread;
             std::string selected_name;
@@ -164,6 +177,7 @@ namespace tether::ui {
             g_messages.rendered_last_outgoing = false;
             if (g_messages.conversation)
                 clear_list_box(g_messages.conversation);
+                g_messages.reaction_slots.clear();
             hide_send_error();
 
             const auto draft = g_messages.drafts.find(key);
@@ -209,6 +223,7 @@ namespace tether::ui {
             GtkWidget* row = gtk_list_box_row_new();
             g_object_set_data_full(G_OBJECT(row), "thread", g_strdup(key.c_str()), g_free);
             g_object_set_data_full(G_OBJECT(row), "name", g_strdup(name.c_str()), g_free);
+            g_object_set_data_full(G_OBJECT(row), "photo", g_strdup(thread.value("photo", "").c_str()), g_free);
             g_object_set_data_full(
                 G_OBJECT(row), "search", g_strdup(fold(name + " " + address + " " + preview).c_str()), g_free);
             // The daemon owns the decision about whether a group can be replied
@@ -277,6 +292,191 @@ namespace tether::ui {
             return TRUE;
         }
 
+        void set_header_avatar(const std::string& photo, const std::string& name) {
+            if (!g_messages.header_avatar)
+                return;
+            clear_list_box(g_messages.header_avatar);
+            gtk_box_pack_start(GTK_BOX(g_messages.header_avatar), avatar_new(photo, name, 44), FALSE, FALSE, 0);
+            gtk_widget_show_all(g_messages.header_avatar);
+        }
+
+        // iOS's own words for tapbacks, as they reach a phone that cannot show
+        // them natively. MAP carries reactions exactly this way, so it is also how
+        // they are sent from here.
+        struct Tapback {
+            const char* verb;
+            const char* emoji;
+        };
+        constexpr Tapback TAPBACKS[] = {{"Loved", "❤️"},
+                                        {"Liked", "\U0001F44D"},
+                                        {"Disliked", "\U0001F44E"},
+                                        {"Laughed at", "\U0001F602"},
+                                        {"Emphasized", "‼️"},
+                                        {"Questioned", "❓"}};
+        constexpr int64_t STAMP_GAP_SECONDS = 15 * 60;
+        constexpr const char* OPEN_QUOTE = "“";
+        constexpr const char* CLOSE_QUOTE = "”";
+        constexpr const char* REPLY_MARK = "↪ ";
+
+        // `“text”` with curly or straight quotes -> text.
+        bool unquote(const std::string& quoted, std::string& out) {
+            for (const auto& [open, close] : {std::pair<std::string, std::string>{OPEN_QUOTE, CLOSE_QUOTE},
+                                              std::pair<std::string, std::string>{"\"", "\""}}) {
+                if (quoted.size() >= open.size() + close.size() && quoted.rfind(open, 0) == 0 &&
+                    quoted.compare(quoted.size() - close.size(), close.size(), close) == 0) {
+                    out = quoted.substr(open.size(), quoted.size() - open.size() - close.size());
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // "Loved “hi”" or "Reacted 🔥 to “hi”" -> the emoji and "hi".
+        bool parse_tapback(const std::string& body, std::string& emoji, std::string& target) {
+            for (const auto& tapback : TAPBACKS) {
+                const std::string prefix = std::string(tapback.verb) + " ";
+                if (body.rfind(prefix, 0) == 0 && unquote(body.substr(prefix.size()), target)) {
+                    emoji = tapback.emoji;
+                    return true;
+                }
+            }
+            if (body.rfind("Reacted ", 0) == 0) {
+                const size_t to = body.find(" to ", 8);
+                if (to != std::string::npos && unquote(body.substr(to + 4), target)) {
+                    emoji = body.substr(8, to - 8);
+                    return !emoji.empty();
+                }
+            }
+            return false;
+        }
+
+        // "↪ “quoted”\nreply" -> quote and reply. Plain messages pass through.
+        void parse_reply(const std::string& body, std::string& quote, std::string& text) {
+            text = body;
+            quote.clear();
+            if (body.rfind(REPLY_MARK, 0) != 0)
+                return;
+            const size_t nl = body.find('\n');
+            if (nl == std::string::npos)
+                return;
+            std::string inner;
+            if (!unquote(body.substr(strlen(REPLY_MARK), nl - strlen(REPLY_MARK)), inner))
+                return;
+            quote = inner;
+            text = body.substr(nl + 1);
+        }
+
+        std::string snippet(const std::string& text, size_t max_chars) {
+            gchar* flat = g_strdup(text.c_str());
+            for (gchar* c = flat; *c; ++c)
+                if (*c == '\n')
+                    *c = ' ';
+            std::string out = flat;
+            g_free(flat);
+            if (g_utf8_strlen(out.c_str(), -1) > static_cast<glong>(max_chars)) {
+                gchar* cut = g_utf8_substring(out.c_str(), 0, max_chars);
+                out = std::string(cut) + "…";
+                g_free(cut);
+            }
+            return out;
+        }
+
+        void send_side_message(const std::string& body) {
+            if (g_messages.selected_thread.empty() || g_messages.sending)
+                return;
+            nlohmann::json j;
+            j["command"] = "bt_send_message";
+            j["thread"] = g_messages.selected_thread;
+            j["body"] = body;
+            if (daemon_send(j)) {
+                g_messages.side_send = true;
+                set_status_main(_("Sending…"));
+            }
+        }
+
+        void add_reaction(const std::string& target, const std::string& emoji) {
+            const auto slot = g_messages.reaction_slots.find(target);
+            if (slot == g_messages.reaction_slots.end())
+                return;
+            GtkWidget* badge = gtk_label_new(emoji.c_str());
+            gtk_style_context_add_class(gtk_widget_get_style_context(badge), "tether-reaction");
+            gtk_box_pack_start(GTK_BOX(slot->second), badge, FALSE, FALSE, 0);
+            gtk_widget_show(badge);
+            gtk_widget_show(slot->second);
+        }
+
+        void show_reply_bar(const std::string& body) {
+            g_messages.reply_to = body;
+            set_text(g_messages.reply_label, tether::tr_format(_("Replying to {}"), OPEN_QUOTE + snippet(body, 60) + CLOSE_QUOTE));
+            gtk_widget_show(g_messages.reply_bar);
+            focus_composer_soon();
+        }
+
+        void hide_reply_bar() {
+            g_messages.reply_to.clear();
+            if (g_messages.reply_bar)
+                gtk_widget_hide(g_messages.reply_bar);
+        }
+
+        const char* message_body(GtkWidget* widget) {
+            return static_cast<const char*>(g_object_get_data(G_OBJECT(widget), "body"));
+        }
+
+        void on_reply_clicked(GtkButton* button, gpointer) {
+            if (const char* body = message_body(GTK_WIDGET(button)))
+                show_reply_bar(body);
+        }
+
+        void on_tapback_clicked(GtkButton* button, gpointer verb) {
+            const char* body = message_body(GTK_WIDGET(button));
+            if (!body)
+                return;
+            send_side_message(std::string(static_cast<const char*>(verb)) + " " + OPEN_QUOTE + body + CLOSE_QUOTE);
+            if (GtkWidget* popover = gtk_widget_get_ancestor(GTK_WIDGET(button), GTK_TYPE_POPOVER))
+                gtk_popover_popdown(GTK_POPOVER(popover));
+        }
+
+        void on_react_clicked(GtkButton* button, gpointer) {
+            const char* body = message_body(GTK_WIDGET(button));
+            if (!body)
+                return;
+            GtkWidget* popover = gtk_popover_new(GTK_WIDGET(button));
+            gtk_style_context_add_class(gtk_widget_get_style_context(popover), "tether-tapback-picker");
+            GtkWidget* row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+            gtk_container_set_border_width(GTK_CONTAINER(row), 4);
+            for (const auto& tapback : TAPBACKS) {
+                GtkWidget* choice = gtk_button_new_with_label(tapback.emoji);
+                gtk_button_set_relief(GTK_BUTTON(choice), GTK_RELIEF_NONE);
+                gtk_widget_set_tooltip_text(choice, tapback.verb);
+                g_object_set_data_full(G_OBJECT(choice), "body", g_strdup(body), g_free);
+                g_signal_connect(choice, "clicked", G_CALLBACK(on_tapback_clicked), const_cast<char*>(tapback.verb));
+                gtk_box_pack_start(GTK_BOX(row), choice, FALSE, FALSE, 0);
+            }
+            gtk_container_add(GTK_CONTAINER(popover), row);
+            gtk_widget_show_all(row);
+            g_signal_connect(popover, "closed", G_CALLBACK(+[](GtkPopover* p, gpointer) { gtk_widget_destroy(GTK_WIDGET(p)); }), nullptr);
+            gtk_popover_popup(GTK_POPOVER(popover));
+        }
+
+        GtkWidget* message_action(const char* icon, const char* tip, GCallback handler, const std::string& body) {
+            GtkWidget* button = gtk_button_new_from_icon_name(icon, GTK_ICON_SIZE_BUTTON);
+            gtk_button_set_relief(GTK_BUTTON(button), GTK_RELIEF_NONE);
+            gtk_widget_set_tooltip_text(button, tip);
+            gtk_widget_set_valign(button, GTK_ALIGN_CENTER);
+            gtk_style_context_add_class(gtk_widget_get_style_context(button), "tether-message-action");
+            g_object_set_data_full(G_OBJECT(button), "body", g_strdup(body.c_str()), g_free);
+            g_signal_connect(button, "clicked", handler, nullptr);
+            return button;
+        }
+
+        // The react and reply buttons fade in beside a bubble under the pointer.
+        gboolean on_message_hover(GtkWidget*, GdkEventCrossing* event, gpointer actions) {
+            if (event->type == GDK_LEAVE_NOTIFY && event->detail == GDK_NOTIFY_INFERIOR)
+                return FALSE;
+            gtk_widget_set_opacity(GTK_WIDGET(actions), event->type == GDK_ENTER_NOTIFY ? 1.0 : 0.0);
+            return FALSE;
+        }
+
         GtkWidget* build_day_row(int64_t stamp) {
             GtkWidget* row = gtk_list_box_row_new();
             gtk_list_box_row_set_selectable(GTK_LIST_BOX_ROW(row), FALSE);
@@ -292,52 +492,126 @@ namespace tether::ui {
             return row;
         }
 
-        GtkWidget* build_message_row(const nlohmann::json& message, bool show_stamp) {
+        GtkWidget* build_message_row(const nlohmann::json& message, bool show_stamp, bool new_group) {
             const bool outgoing = message.value("outgoing", false);
             const std::string body = message.value("body", "");
             const std::string stamp =
                 show_stamp ? format_timestamp(message.value("timestamp", static_cast<int64_t>(0))) : "";
+            std::string quote, text;
+            parse_reply(body, quote, text);
 
             GtkWidget* row = gtk_list_box_row_new();
             gtk_list_box_row_set_selectable(GTK_LIST_BOX_ROW(row), FALSE);
             gtk_list_box_row_set_activatable(GTK_LIST_BOX_ROW(row), FALSE);
+            gtk_style_context_add_class(gtk_widget_get_style_context(row), "tether-message-row");
 
             GtkWidget* box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
-            gtk_widget_set_margin_start(box, 8);
-            gtk_widget_set_margin_end(box, 8);
-            gtk_widget_set_margin_top(box, show_stamp ? 8 : 1);
+            gtk_widget_set_margin_start(box, 14);
+            gtk_widget_set_margin_end(box, 14);
+            gtk_widget_set_margin_top(box, show_stamp ? 12 : (new_group ? 8 : 1));
             gtk_widget_set_margin_bottom(box, 1);
-            gtk_widget_set_halign(box, outgoing ? GTK_ALIGN_END : GTK_ALIGN_START);
 
+            // Centred between groups, as iMessage does, rather than pinned to a side.
             if (!stamp.empty()) {
                 GtkWidget* time_label = gtk_label_new(stamp.c_str());
-                gtk_label_set_xalign(GTK_LABEL(time_label), outgoing ? 1.0 : 0.0);
-                gtk_style_context_add_class(gtk_widget_get_style_context(time_label), "muted");
+                gtk_widget_set_halign(time_label, GTK_ALIGN_CENTER);
+                gtk_widget_set_margin_bottom(time_label, 4);
+                gtk_style_context_add_class(gtk_widget_get_style_context(time_label), "tether-stamp");
                 gtk_box_pack_start(GTK_BOX(box), time_label, FALSE, FALSE, 0);
             }
 
+            const GtkAlign side = outgoing ? GTK_ALIGN_END : GTK_ALIGN_START;
+            GtkWidget* column = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+            gtk_widget_set_halign(column, side);
+
+            // Tapbacks sit on the bubble's outer top corner.
+            GtkWidget* reactions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+            gtk_widget_set_halign(reactions, outgoing ? GTK_ALIGN_START : GTK_ALIGN_END);
+            gtk_widget_set_no_show_all(reactions, TRUE);
+            gtk_box_pack_start(GTK_BOX(column), reactions, FALSE, FALSE, 0);
+            g_messages.reaction_slots[body] = reactions;
+            if (text != body)
+                g_messages.reaction_slots[text] = reactions;
+
+            if (!quote.empty()) {
+                GtkWidget* quoted = gtk_label_new(snippet(quote, 80).c_str());
+                gtk_label_set_line_wrap(GTK_LABEL(quoted), TRUE);
+                gtk_label_set_max_width_chars(GTK_LABEL(quoted), 40);
+                gtk_label_set_xalign(GTK_LABEL(quoted), 0.0);
+                gtk_widget_set_halign(quoted, side);
+                gtk_style_context_add_class(gtk_widget_get_style_context(quoted), "tether-reply-quote");
+                gtk_box_pack_start(GTK_BOX(column), quoted, FALSE, FALSE, 0);
+            }
+
             GtkWidget* bubble = gtk_label_new(nullptr);
-            gtk_label_set_markup(GTK_LABEL(bubble), linkify_markup(body).c_str());
+            gtk_label_set_markup(GTK_LABEL(bubble), linkify_markup(text).c_str());
             gtk_label_set_track_visited_links(GTK_LABEL(bubble), FALSE);
             g_signal_connect(bubble, "activate-link", G_CALLBACK(on_bubble_link), nullptr);
             gtk_label_set_line_wrap(GTK_LABEL(bubble), TRUE);
             gtk_label_set_line_wrap_mode(GTK_LABEL(bubble), PANGO_WRAP_WORD_CHAR);
-            gtk_label_set_max_width_chars(GTK_LABEL(bubble), 48);
+            gtk_label_set_max_width_chars(GTK_LABEL(bubble), 44);
             gtk_label_set_xalign(GTK_LABEL(bubble), 0.0);
             gtk_label_set_selectable(GTK_LABEL(bubble), TRUE);
             // Without this the label stretches to whatever else is in the row and
             // the bubble reads as a full-width bar rather than wrapping the text.
-            gtk_widget_set_halign(bubble, outgoing ? GTK_ALIGN_END : GTK_ALIGN_START);
+            gtk_widget_set_halign(bubble, side);
             GtkStyleContext* bubble_style = gtk_widget_get_style_context(bubble);
             gtk_style_context_add_class(bubble_style, "tether-bubble");
             gtk_style_context_add_class(bubble_style, outgoing ? "tether-bubble-out" : "tether-bubble-in");
+            if (g_utf8_strlen(text.c_str(), -1) <= 3 && !text.empty() && !g_unichar_isalnum(g_utf8_get_char(text.c_str())))
+                gtk_style_context_add_class(bubble_style, "tether-bubble-emoji");
             // Direction is otherwise only bubble side and color.
             set_accessible_name(bubble,
                                 // TRANSLATORS: Read aloud before a message you sent, {} is the message.
                                 outgoing ? tether::tr_format(_("Sent: {}"), body)
                                          // TRANSLATORS: Read aloud before a message you received, {} is the message.
                                          : tether::tr_format(_("Received: {}"), body));
-            gtk_box_pack_start(GTK_BOX(box), bubble, FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(column), bubble, FALSE, FALSE, 0);
+
+            GtkWidget* actions = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+            gtk_widget_set_valign(actions, GTK_ALIGN_CENTER);
+            gtk_box_pack_start(GTK_BOX(actions),
+                               message_action("face-smile-symbolic", _("React"), G_CALLBACK(on_react_clicked), text),
+                               FALSE, FALSE, 0);
+            gtk_box_pack_start(GTK_BOX(actions),
+                               message_action("mail-reply-sender-symbolic", _("Reply"), G_CALLBACK(on_reply_clicked), text),
+                               FALSE, FALSE, 0);
+            gtk_widget_set_opacity(actions, 0.0);
+
+            GtkWidget* line = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
+            gtk_widget_set_halign(line, side);
+            if (outgoing) {
+                gtk_box_pack_start(GTK_BOX(line), actions, FALSE, FALSE, 0);
+                gtk_box_pack_start(GTK_BOX(line), column, FALSE, FALSE, 0);
+            } else {
+                gtk_box_pack_start(GTK_BOX(line), column, FALSE, FALSE, 0);
+                gtk_box_pack_start(GTK_BOX(line), actions, FALSE, FALSE, 0);
+            }
+
+            GtkWidget* hover = gtk_event_box_new();
+            gtk_widget_add_events(hover, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
+            g_signal_connect(hover, "enter-notify-event", G_CALLBACK(on_message_hover), actions);
+            g_signal_connect(hover, "leave-notify-event", G_CALLBACK(on_message_hover), actions);
+            gtk_container_add(GTK_CONTAINER(hover), line);
+            gtk_box_pack_start(GTK_BOX(box), hover, FALSE, FALSE, 0);
+
+            // Only the newest outgoing message carries "Sent". MAP says the phone
+            // took it; nothing says whether it was delivered or read.
+            if (outgoing) {
+                if (g_messages.last_status)
+                    gtk_widget_destroy(g_messages.last_status);
+                g_messages.last_status = gtk_label_new(_("Sent"));
+                gtk_widget_set_halign(g_messages.last_status, GTK_ALIGN_END);
+                gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.last_status), "tether-stamp");
+                g_signal_connect(g_messages.last_status,
+                                 "destroy",
+                                 G_CALLBACK(+[](GtkWidget* w, gpointer) {
+                                     if (g_messages.last_status == w)
+                                         g_messages.last_status = nullptr;
+                                 }),
+                                 nullptr);
+                gtk_box_pack_start(GTK_BOX(box), g_messages.last_status, FALSE, FALSE, 0);
+            }
 
             gtk_container_add(GTK_CONTAINER(row), box);
             return row;
@@ -535,7 +809,18 @@ namespace tether::ui {
                                      stamp - g_messages.rendered_last_stamp < GROUP_WINDOW_SECONDS &&
                                      same_local_day(g_messages.rendered_last_stamp, stamp);
 
-                gtk_list_box_insert(GTK_LIST_BOX(g_messages.conversation), build_message_row(message, !grouped), -1);
+                std::string emoji, target;
+                if (parse_tapback(message.value("body", ""), emoji, target) &&
+                    g_messages.reaction_slots.count(target)) {
+                    add_reaction(target, emoji);
+                    continue;
+                }
+
+                // iMessage only stamps after a pause, not every time the sender changes.
+                const bool pause = first || stamp - g_messages.rendered_last_stamp >= STAMP_GAP_SECONDS ||
+                                   !same_local_day(g_messages.rendered_last_stamp, stamp);
+                gtk_list_box_insert(
+                    GTK_LIST_BOX(g_messages.conversation), build_message_row(message, pause, !grouped), -1);
                 g_messages.rendered_last_stamp = stamp;
                 g_messages.rendered_last_outgoing = outgoing;
             }
@@ -572,6 +857,7 @@ namespace tether::ui {
                     g_messages.scroll_from_bottom =
                         conversation_bottom(adjustment) - gtk_adjustment_get_value(adjustment);
                 clear_list_box(g_messages.conversation);
+                g_messages.reaction_slots.clear();
                 g_messages.rendered_last_stamp = 0;
                 g_messages.rendered_last_outgoing = false;
                 from = 0;
@@ -734,9 +1020,13 @@ namespace tether::ui {
         }
 
         void on_send_clicked(GtkWidget*, gpointer) {
-            const std::string body = composer_text();
+            std::string body = composer_text();
             if (body.empty() || g_messages.selected_thread.empty())
                 return;
+            // MAP has no threaded replies, so the quote travels in the text,
+            // and parse_reply turns it back into a quote on this side.
+            if (!g_messages.reply_to.empty())
+                body = REPLY_MARK + std::string(OPEN_QUOTE) + snippet(g_messages.reply_to, 60) + CLOSE_QUOTE + "\n" + body;
 
             nlohmann::json j;
             j["command"] = "bt_send_message";
@@ -783,6 +1073,14 @@ namespace tether::ui {
         }
 
         void on_send_result(const nlohmann::json& event) {
+            if (g_messages.side_send) {
+                g_messages.side_send = false;
+                const bool ok = event.value("success", false);
+                set_status_main(ok ? _("Reaction sent") : event.value("message", _("The reaction was not sent.")));
+                if (ok)
+                    g_messages.pin_next = true;
+                return;
+            }
             clear_sending();
             update_composer_sensitivity();
             focus_composer_soon();
@@ -792,6 +1090,7 @@ namespace tether::ui {
                 // leaves the text where the user can retry or copy it out.
                 g_messages.drafts.erase(g_messages.selected_thread);
                 set_composer_text("");
+                hide_reply_bar();
                 hide_send_error();
                 g_messages.pin_next = true;
                 // The conversation now exists under this key, so the thread list
@@ -828,11 +1127,12 @@ namespace tether::ui {
             g_messages.selected_block_reason = block_reason ? block_reason : "";
             // Which conversation is open is otherwise only legible from the
             // selection highlight in the list beside it.
-            set_markup(g_messages.conversation_header,
-                       "<b>" +
-                           escape_markup(g_messages.selected_name.empty() ? g_messages.selected_thread
-                                                                          : g_messages.selected_name) +
-                           "</b>");
+            const std::string shown =
+                g_messages.selected_name.empty() ? g_messages.selected_thread : g_messages.selected_name;
+            set_markup(g_messages.conversation_header, "<small>" + escape_markup(shown) + "</small>");
+            const char* photo = (const char*)g_object_get_data(G_OBJECT(row), "photo");
+            set_header_avatar(photo ? photo : "", shown);
+            hide_reply_bar();
             update_composer_sensitivity();
         }
 
@@ -880,6 +1180,7 @@ namespace tether::ui {
             if (g_messages.selected_thread != g_messages.compose_requested_key) {
                 g_messages.compose_requested_key = g_messages.selected_thread;
                 clear_list_box(g_messages.conversation);
+                g_messages.reaction_slots.clear();
                 g_messages.rendered.clear();
                 g_messages.rendered_last_stamp = 0;
                 g_messages.rendered_last_outgoing = false;
@@ -906,6 +1207,7 @@ namespace tether::ui {
             contact_completion_request();
 
             clear_list_box(g_messages.conversation);
+                g_messages.reaction_slots.clear();
             g_messages.rendered.clear();
             g_messages.rendered_last_stamp = 0;
             g_messages.rendered_last_outgoing = false;
@@ -1084,6 +1386,7 @@ namespace tether::ui {
         gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(thread_scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
         gtk_widget_set_size_request(thread_scroll, 240, -1);
         g_messages.thread_list = gtk_list_box_new();
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.thread_list), "tether-thread-list");
         g_messages.thread_selected_handler =
             g_signal_connect(g_messages.thread_list, "row-selected", G_CALLBACK(on_thread_selected), nullptr);
         g_signal_connect(g_messages.thread_list, "row-activated", G_CALLBACK(on_thread_activated), nullptr);
@@ -1098,6 +1401,7 @@ namespace tether::ui {
         gtk_entry_set_width_chars(GTK_ENTRY(g_messages.search_entry), 8);
         gtk_widget_set_margin_top(g_messages.search_entry, 8);
         gtk_widget_set_margin_start(g_messages.search_entry, 8);
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.search_entry), "tether-search");
         gtk_widget_set_margin_end(g_messages.search_entry, 8);
         g_signal_connect(g_messages.search_entry, "search-changed", G_CALLBACK(on_search_changed), nullptr);
         // GtkSearchEntry reports Escape but does not act on it outside a
@@ -1109,18 +1413,19 @@ namespace tether::ui {
                              gtk_widget_grab_focus(g_messages.thread_list);
                          }),
                          nullptr);
-        gtk_box_pack_start(GTK_BOX(thread_side), g_messages.search_entry, FALSE, FALSE, 0);
+        GtkWidget* search_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+        gtk_box_pack_start(GTK_BOX(search_row), g_messages.search_entry, TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(thread_side), search_row, FALSE, FALSE, 0);
 
-        GtkWidget* new_message = gtk_button_new_with_label(_("New Message"));
-        gtk_button_set_image(GTK_BUTTON(new_message),
-                             gtk_image_new_from_icon_name("list-add-symbolic", GTK_ICON_SIZE_BUTTON));
-        gtk_button_set_always_show_image(GTK_BUTTON(new_message), TRUE);
-        gtk_widget_set_margin_top(new_message, 8);
-        gtk_widget_set_margin_bottom(new_message, 8);
-        gtk_widget_set_margin_start(new_message, 8);
-        gtk_widget_set_margin_end(new_message, 8);
+        GtkWidget* new_message = gtk_button_new_from_icon_name("document-edit-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_button_set_relief(GTK_BUTTON(new_message), GTK_RELIEF_NONE);
+        gtk_widget_set_tooltip_text(new_message, _("New Message"));
+        set_accessible_name(new_message, _("New Message"));
+        gtk_widget_set_valign(new_message, GTK_ALIGN_CENTER);
+        gtk_widget_set_margin_end(new_message, 6);
         g_signal_connect(new_message, "clicked", G_CALLBACK(+[](GtkWidget*, gpointer) { enter_compose(); }), nullptr);
-        gtk_box_pack_start(GTK_BOX(thread_side), new_message, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(search_row), new_message, FALSE, FALSE, 0);
+        gtk_widget_set_margin_bottom(search_row, 6);
         gtk_box_pack_start(GTK_BOX(thread_side), thread_scroll, TRUE, TRUE, 0);
         gtk_paned_pack1(GTK_PANED(paned), thread_side, FALSE, FALSE);
 
@@ -1175,12 +1480,16 @@ namespace tether::ui {
         gtk_widget_hide(g_messages.compose_bar);
         gtk_widget_set_no_show_all(g_messages.compose_bar, TRUE);
 
-        GtkWidget* conversation_header_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-        gtk_container_set_border_width(GTK_CONTAINER(conversation_header_box), 10);
+        // iMessage's header: the person's picture over their name, centred.
+        GtkWidget* conversation_header_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+        gtk_container_set_border_width(GTK_CONTAINER(conversation_header_box), 8);
+        g_messages.header_avatar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 0);
+        gtk_widget_set_halign(g_messages.header_avatar, GTK_ALIGN_CENTER);
+        gtk_box_pack_start(GTK_BOX(conversation_header_box), g_messages.header_avatar, FALSE, FALSE, 0);
         g_messages.conversation_header = gtk_label_new(nullptr);
-        gtk_label_set_xalign(GTK_LABEL(g_messages.conversation_header), 0.0);
+        gtk_widget_set_halign(g_messages.conversation_header, GTK_ALIGN_CENTER);
         gtk_label_set_ellipsize(GTK_LABEL(g_messages.conversation_header), PANGO_ELLIPSIZE_END);
-        gtk_box_pack_start(GTK_BOX(conversation_header_box), g_messages.conversation_header, TRUE, TRUE, 0);
+        gtk_box_pack_start(GTK_BOX(conversation_header_box), g_messages.conversation_header, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(conversation_box), conversation_header_box, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(conversation_box), gtk_separator_new(GTK_ORIENTATION_HORIZONTAL), FALSE, FALSE, 0);
 
@@ -1196,31 +1505,84 @@ namespace tether::ui {
         }
         gtk_box_pack_start(GTK_BOX(conversation_box), g_messages.conversation_scroll, TRUE, TRUE, 0);
 
-        GtkWidget* composer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
-        gtk_container_set_border_width(GTK_CONTAINER(composer_box), 8);
+        // Replying-to strip above the composer, hidden until a Reply button is used.
+        g_messages.reply_bar = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+        gtk_widget_set_margin_start(g_messages.reply_bar, 16);
+        gtk_widget_set_margin_end(g_messages.reply_bar, 12);
+        gtk_widget_set_margin_top(g_messages.reply_bar, 4);
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.reply_bar), "tether-reply-bar");
+        gtk_box_pack_start(GTK_BOX(g_messages.reply_bar),
+                           gtk_image_new_from_icon_name("mail-reply-sender-symbolic", GTK_ICON_SIZE_MENU),
+                           FALSE, FALSE, 0);
+        g_messages.reply_label = gtk_label_new(nullptr);
+        gtk_label_set_xalign(GTK_LABEL(g_messages.reply_label), 0.0);
+        gtk_label_set_ellipsize(GTK_LABEL(g_messages.reply_label), PANGO_ELLIPSIZE_END);
+        gtk_box_pack_start(GTK_BOX(g_messages.reply_bar), g_messages.reply_label, TRUE, TRUE, 0);
+        GtkWidget* reply_cancel = gtk_button_new_from_icon_name("window-close-symbolic", GTK_ICON_SIZE_MENU);
+        gtk_button_set_relief(GTK_BUTTON(reply_cancel), GTK_RELIEF_NONE);
+        gtk_widget_set_tooltip_text(reply_cancel, _("Cancel reply"));
+        g_signal_connect(reply_cancel, "clicked", G_CALLBACK(+[](GtkButton*, gpointer) { hide_reply_bar(); }), nullptr);
+        gtk_box_pack_start(GTK_BOX(g_messages.reply_bar), reply_cancel, FALSE, FALSE, 0);
+        gtk_widget_show_all(g_messages.reply_bar);
+        gtk_widget_hide(g_messages.reply_bar);
+        gtk_widget_set_no_show_all(g_messages.reply_bar, TRUE);
+
+        GtkWidget* composer_box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 6);
+        gtk_container_set_border_width(GTK_CONTAINER(composer_box), 10);
         g_messages.composer = gtk_text_view_new();
         set_accessible_name(g_messages.composer, _("Message"));
         // Tab moves focus on to Send instead of typing a tab.
         gtk_text_view_set_accepts_tab(GTK_TEXT_VIEW(g_messages.composer), FALSE);
         gtk_text_view_set_wrap_mode(GTK_TEXT_VIEW(g_messages.composer), GTK_WRAP_WORD_CHAR);
-        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(g_messages.composer), 6);
-        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(g_messages.composer), 6);
-        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(g_messages.composer), 6);
-        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(g_messages.composer), 6);
-        gtk_widget_set_size_request(g_messages.composer, -1, 48);
+        gtk_text_view_set_left_margin(GTK_TEXT_VIEW(g_messages.composer), 4);
+        gtk_text_view_set_right_margin(GTK_TEXT_VIEW(g_messages.composer), 4);
+        gtk_text_view_set_top_margin(GTK_TEXT_VIEW(g_messages.composer), 5);
+        gtk_text_view_set_bottom_margin(GTK_TEXT_VIEW(g_messages.composer), 5);
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.composer), "tether-composer-text");
         GtkWidget* composer_frame = gtk_scrolled_window_new(nullptr, nullptr);
         gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(composer_frame), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
-        // Without a border the box floats in the panel with nothing marking it as
-        // somewhere to type.
-        gtk_scrolled_window_set_shadow_type(GTK_SCROLLED_WINDOW(composer_frame), GTK_SHADOW_IN);
+        gtk_scrolled_window_set_propagate_natural_height(GTK_SCROLLED_WINDOW(composer_frame), TRUE);
         gtk_scrolled_window_set_max_content_height(GTK_SCROLLED_WINDOW(composer_frame), 140);
         gtk_container_add(GTK_CONTAINER(composer_frame), g_messages.composer);
-        gtk_box_pack_start(GTK_BOX(composer_box), composer_frame, TRUE, TRUE, 0);
 
-        g_messages.send_button = gtk_button_new_with_label(_("Send"));
+        // GtkTextView has no placeholder, so a label sits over it while it is empty.
+        GtkWidget* composer_overlay = gtk_overlay_new();
+        gtk_container_add(GTK_CONTAINER(composer_overlay), composer_frame);
+        g_messages.composer_placeholder = gtk_label_new(_("iMessage"));
+        gtk_widget_set_halign(g_messages.composer_placeholder, GTK_ALIGN_START);
+        gtk_widget_set_valign(g_messages.composer_placeholder, GTK_ALIGN_CENTER);
+        gtk_widget_set_margin_start(g_messages.composer_placeholder, 6);
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.composer_placeholder), "tether-placeholder");
+        gtk_overlay_add_overlay(GTK_OVERLAY(composer_overlay), g_messages.composer_placeholder);
+        gtk_overlay_set_overlay_pass_through(GTK_OVERLAY(composer_overlay), g_messages.composer_placeholder, TRUE);
+
+        // The pill: text, then emoji, then send, all inside one rounded field.
+        GtkWidget* pill = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 2);
+        gtk_style_context_add_class(gtk_widget_get_style_context(pill), "tether-composer");
+        gtk_box_pack_start(GTK_BOX(pill), composer_overlay, TRUE, TRUE, 0);
+
+        GtkWidget* emoji = gtk_button_new_from_icon_name("face-smile-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_button_set_relief(GTK_BUTTON(emoji), GTK_RELIEF_NONE);
+        gtk_widget_set_valign(emoji, GTK_ALIGN_END);
+        gtk_widget_set_tooltip_text(emoji, _("Emoji (Ctrl+.)"));
+        gtk_style_context_add_class(gtk_widget_get_style_context(emoji), "tether-composer-button");
+        // GTK's own emoji chooser, the same one Ctrl+. opens in the box.
+        g_signal_connect(emoji,
+                         "clicked",
+                         G_CALLBACK(+[](GtkButton*, gpointer) {
+                             gtk_widget_grab_focus(g_messages.composer);
+                             g_signal_emit_by_name(g_messages.composer, "insert-emoji");
+                         }),
+                         nullptr);
+        gtk_box_pack_start(GTK_BOX(pill), emoji, FALSE, FALSE, 0);
+
+        g_messages.send_button = gtk_button_new_from_icon_name("go-up-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_widget_set_tooltip_text(g_messages.send_button, _("Send"));
+        set_accessible_name(g_messages.send_button, _("Send"));
         gtk_widget_set_valign(g_messages.send_button, GTK_ALIGN_END);
-        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.send_button), "suggested-action");
-        gtk_box_pack_start(GTK_BOX(composer_box), g_messages.send_button, FALSE, FALSE, 0);
+        gtk_style_context_add_class(gtk_widget_get_style_context(g_messages.send_button), "tether-send");
+        gtk_box_pack_start(GTK_BOX(pill), g_messages.send_button, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(composer_box), pill, TRUE, TRUE, 0);
 
         g_signal_connect(g_messages.send_button, "clicked", G_CALLBACK(on_send_clicked), nullptr);
         g_signal_connect(g_messages.composer, "key-press-event", G_CALLBACK(on_composer_key), nullptr);
@@ -1229,9 +1591,11 @@ namespace tether::ui {
         // that no longer describes what is in the box.
         g_signal_connect(gtk_text_view_get_buffer(GTK_TEXT_VIEW(g_messages.composer)),
                          "changed",
-                         G_CALLBACK(+[](GtkTextBuffer*, gpointer) {
+                         G_CALLBACK(+[](GtkTextBuffer* buffer, gpointer) {
                              hide_send_error();
                              update_composer_sensitivity();
+                             gtk_widget_set_visible(g_messages.composer_placeholder,
+                                                    gtk_text_buffer_get_char_count(buffer) == 0);
                          }),
                          nullptr);
         // Enabled only once MAP is up and a conversation is open.
@@ -1271,6 +1635,7 @@ namespace tether::ui {
         gtk_widget_set_margin_end(g_messages.composer_notice, 8);
         gtk_box_pack_start(GTK_BOX(conversation_box), g_messages.composer_notice, FALSE, FALSE, 0);
 
+        gtk_box_pack_start(GTK_BOX(conversation_box), g_messages.reply_bar, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(conversation_box), composer_box, FALSE, FALSE, 0);
         gtk_stack_add_named(GTK_STACK(g_messages.placeholder_stack), conversation_box, "conversation");
 
