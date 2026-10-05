@@ -301,6 +301,7 @@ namespace {
         g_signal_connect(stack, "notify::visible-child-name", G_CALLBACK(on_visible_view_changed), nullptr);
 
         GtkWidget* root = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+        gtk_box_pack_start(GTK_BOX(root), calls_banner_new(), FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(root), stack, TRUE, TRUE, 0);
         gtk_box_pack_start(GTK_BOX(root), create_route_bar(), FALSE, FALSE, 0);
         gtk_container_add(GTK_CONTAINER(window), root);

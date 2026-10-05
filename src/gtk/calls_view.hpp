@@ -14,6 +14,10 @@ namespace tether::ui {
     // still arrives, because the daemon pushes those unasked.
     void calls_view_set_visible(bool visible);
 
+    // The "on a call on your iPhone" strip with its Move to laptop button,
+    // packed above every tab by the window.
+    GtkWidget* calls_banner_new();
+
     // Reflects the daemon's "always use laptop for calls" setting.
     void calls_view_set_on_laptop(bool on);
 

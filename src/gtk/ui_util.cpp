@@ -60,6 +60,42 @@ button.tether-nav-item:checked {
     background-color: alpha(#0a84ff, 0.12);
 }
 
+/* Call controls. */
+.tether-call-banner {
+    background-color: alpha(#23a55a, 0.22);
+    border-bottom: 1px solid alpha(#23a55a, 0.45);
+}
+
+button.tether-dial-key {
+    min-width: 64px;
+    min-height: 64px;
+    border-radius: 32px;
+    padding: 0;
+    background-image: none;
+    background-color: alpha(@theme_fg_color, 0.08);
+    border: none;
+    box-shadow: none;
+    transition: background-color 100ms ease-out;
+}
+
+button.tether-dial-key:hover {
+    background-color: alpha(@theme_fg_color, 0.14);
+}
+
+button.tether-dial-key:active {
+    background-color: alpha(@theme_fg_color, 0.24);
+}
+
+.tether-dial-digit {
+    font-size: 160%;
+}
+
+.tether-dial-letters {
+    font-size: 62%;
+    letter-spacing: 2px;
+    opacity: 0.6;
+}
+
 /* Messages, styled after iMessage. */
 .tether-bubble {
     padding: 7px 13px;

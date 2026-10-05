@@ -5,6 +5,9 @@
 #include <tether/i18n.hpp>
 
 #include <string>
+#include <algorithm>
+#include <memory>
+#include <set>
 #include <cstdlib>
 #include <cctype>
 #include <cstring>
@@ -21,6 +24,12 @@ namespace tether::ui {
             GtkWidget* dial_button = nullptr;
             GtkWidget* dial_phone_button = nullptr;
             GtkWidget* laptop_switch = nullptr;
+            // "On a call on your iPhone" strip shown over every tab.
+            GtkWidget* banner = nullptr;
+            GtkWidget* banner_label = nullptr;
+            std::string banner_call;          // path of the call the strip is about
+            std::set<std::string> notified;   // calls already announced on the desktop
+            nlohmann::json live = nlohmann::json::array();
             GtkWidget* network_label = nullptr;
             bool visible = false;
             bool available = false;
@@ -338,7 +347,17 @@ namespace tether::ui {
             return row;
         }
 
+        void update_banner();
+
         void show_calls(const nlohmann::json& event) {
+            g_calls.live = event.contains("calls") && event["calls"].is_array() ? event["calls"] : nlohmann::json::array();
+            for (auto it = g_calls.notified.begin(); it != g_calls.notified.end();) {
+                const bool alive = std::any_of(g_calls.live.begin(), g_calls.live.end(), [&](const auto& c) {
+                    return c.value("path", "") == *it;
+                });
+                it = alive ? std::next(it) : g_calls.notified.erase(it);
+            }
+            update_banner();
             clear_list_box(g_calls.list);
             const bool empty = !event.contains("calls") || event["calls"].empty();
             if (!empty) {
@@ -347,6 +366,120 @@ namespace tether::ui {
             }
             gtk_widget_show_all(g_calls.list);
             gtk_stack_set_visible_child_name(GTK_STACK(g_calls.stack), empty ? "status" : "list");
+        }
+
+        // ---- call-on-phone banner ----
+
+        const nlohmann::json* call_on_phone() {
+            if (!g_calls.audio_routable || g_calls.audio_here)
+                return nullptr;
+            for (const auto& call : g_calls.live)
+                if (call.value("connected", false))
+                    return &call;
+            return nullptr;
+        }
+
+        std::string caller_name(const nlohmann::json& call) {
+            const std::string name = call.value("name", "");
+            const std::string number = call.value("number", "");
+            return !name.empty() ? name : (!number.empty() ? number : std::string(_("Unknown caller")));
+        }
+
+        // If the call is still on the phone a few seconds in (so not one the
+        // laptop is about to take over), say so on the desktop with a button.
+        gboolean notify_call_on_phone(gpointer data) {
+            std::unique_ptr<std::string> path(static_cast<std::string*>(data));
+            const nlohmann::json* call = call_on_phone();
+            if (!call || call->value("path", "") != *path || g_calls.notified.count(*path))
+                return G_SOURCE_REMOVE;
+            g_calls.notified.insert(*path);
+            GtkWidget* window = main_window();
+            if (window && gtk_window_is_active(GTK_WINDOW(window)))
+                return G_SOURCE_REMOVE;  // the banner is right there
+            GApplication* app = g_application_get_default();
+            if (!app)
+                return G_SOURCE_REMOVE;
+            GNotification* note = g_notification_new(_("You're on a call on your iPhone"));
+            g_notification_set_body(note, caller_name(*call).c_str());
+            g_notification_set_icon(note, g_themed_icon_new("call-start-symbolic"));
+            g_notification_add_button(note, _("Move to laptop"), "app.move-call-to-laptop");
+            g_application_send_notification(app, "call-on-phone", note);
+            g_object_unref(note);
+            return G_SOURCE_REMOVE;
+        }
+
+        void update_banner() {
+            if (!g_calls.banner)
+                return;
+            const nlohmann::json* call = call_on_phone();
+            if (!call) {
+                gtk_revealer_set_reveal_child(GTK_REVEALER(g_calls.banner), FALSE);
+                g_calls.banner_call.clear();
+                if (GApplication* app = g_application_get_default())
+                    g_application_withdraw_notification(app, "call-on-phone");
+                return;
+            }
+            const std::string path = call->value("path", "");
+            gtk_label_set_markup(GTK_LABEL(g_calls.banner_label),
+                                 tether::tr_format(_("On a call with <b>{}</b> on your iPhone"),
+                                                   escape_markup(caller_name(*call)))
+                                     .c_str());
+            gtk_revealer_set_reveal_child(GTK_REVEALER(g_calls.banner), TRUE);
+            if (g_calls.banner_call != path) {
+                g_calls.banner_call = path;
+                g_timeout_add_seconds(3, notify_call_on_phone, new std::string(path));
+            }
+        }
+
+        // ---- number pad ----
+
+        void on_key_clicked(GtkButton* button, gpointer) {
+            const char* digit = static_cast<const char*>(g_object_get_data(G_OBJECT(button), "digit"));
+            if (!digit || !g_calls.entry)
+                return;
+            gint position = gtk_editable_get_position(GTK_EDITABLE(g_calls.entry));
+            gtk_editable_insert_text(GTK_EDITABLE(g_calls.entry), digit, -1, &position);
+            gtk_editable_set_position(GTK_EDITABLE(g_calls.entry), position);
+        }
+
+        GtkWidget* build_keypad() {
+            GtkWidget* grid = gtk_grid_new();
+            gtk_grid_set_row_spacing(GTK_GRID(grid), 12);
+            gtk_grid_set_column_spacing(GTK_GRID(grid), 22);
+            gtk_widget_set_halign(grid, GTK_ALIGN_CENTER);
+            static const std::pair<const char*, const char*> keys[] = {
+                {"1", ""},     {"2", "ABC"}, {"3", "DEF"},  {"4", "GHI"}, {"5", "JKL"}, {"6", "MNO"},
+                {"7", "PQRS"}, {"8", "TUV"}, {"9", "WXYZ"}, {"*", ""},    {"0", "+"},   {"#", ""}};
+            for (int i = 0; i < 12; ++i) {
+                GtkWidget* key = gtk_button_new();
+                gtk_style_context_add_class(gtk_widget_get_style_context(key), "tether-dial-key");
+                GtkWidget* face = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
+                gtk_widget_set_valign(face, GTK_ALIGN_CENTER);
+                GtkWidget* digit = gtk_label_new(keys[i].first);
+                gtk_style_context_add_class(gtk_widget_get_style_context(digit), "tether-dial-digit");
+                gtk_box_pack_start(GTK_BOX(face), digit, FALSE, FALSE, 0);
+                GtkWidget* letters = gtk_label_new(keys[i].second);
+                gtk_style_context_add_class(gtk_widget_get_style_context(letters), "tether-dial-letters");
+                gtk_box_pack_start(GTK_BOX(face), letters, FALSE, FALSE, 0);
+                gtk_container_add(GTK_CONTAINER(key), face);
+                g_object_set_data(G_OBJECT(key), "digit", const_cast<char*>(keys[i].first));
+                g_signal_connect(key, "clicked", G_CALLBACK(on_key_clicked), nullptr);
+                if (i == 10) {
+                    // Holding 0 gives +, as on a phone.
+                    GtkGesture* hold = gtk_gesture_long_press_new(key);
+                    g_object_set_data_full(G_OBJECT(key), "hold", hold, g_object_unref);
+                    g_signal_connect(hold,
+                                     "pressed",
+                                     G_CALLBACK(+[](GtkGestureLongPress*, gdouble, gdouble, gpointer) {
+                                         gint position = gtk_editable_get_position(GTK_EDITABLE(g_calls.entry));
+                                         gtk_editable_insert_text(GTK_EDITABLE(g_calls.entry), "+", -1, &position);
+                                         gtk_editable_set_position(GTK_EDITABLE(g_calls.entry), position);
+                                     }),
+                                     nullptr);
+                }
+                gtk_grid_attach(GTK_GRID(grid), key, i % 3, i / 3, 1, 1);
+            }
+            return grid;
         }
 
     } // namespace
@@ -396,16 +529,51 @@ namespace tether::ui {
             g_calls.audio_routable = !audio.empty();
             g_calls.audio_here = audio == "active";
             gtk_widget_set_visible(g_calls.dial_button, g_calls.audio_routable);
+            update_banner();
             set_text(g_calls.status_label,
                      g_calls.available
                          ? std::string(_("No calls.")) + (reason.empty() ? "" : "\n" + reason)
                          : (reason.empty() ? _("Call control is off. Turn it on with 'tether --bt-calls-enable on'.")
                                            : reason));
-            if (g_calls.visible)
-                request_calls();
+            // Always, not only while the tab is open: the banner needs to know.
+            request_calls();
             return false;
         }
         return false;
+    }
+
+    GtkWidget* calls_banner_new() {
+        g_calls.banner = gtk_revealer_new();
+        gtk_revealer_set_transition_type(GTK_REVEALER(g_calls.banner), GTK_REVEALER_TRANSITION_TYPE_SLIDE_DOWN);
+        GtkWidget* box = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 10);
+        gtk_container_set_border_width(GTK_CONTAINER(box), 8);
+        gtk_style_context_add_class(gtk_widget_get_style_context(box), "tether-call-banner");
+        gtk_box_pack_start(GTK_BOX(box), gtk_image_new_from_icon_name("call-start-symbolic", GTK_ICON_SIZE_BUTTON), FALSE, FALSE, 0);
+        g_calls.banner_label = gtk_label_new("");
+        gtk_label_set_xalign(GTK_LABEL(g_calls.banner_label), 0.0);
+        gtk_label_set_ellipsize(GTK_LABEL(g_calls.banner_label), PANGO_ELLIPSIZE_END);
+        gtk_box_pack_start(GTK_BOX(box), g_calls.banner_label, TRUE, TRUE, 0);
+        GtkWidget* move = gtk_button_new_with_label(_("Move to laptop"));
+        gtk_style_context_add_class(gtk_widget_get_style_context(move), "suggested-action");
+        gtk_widget_set_valign(move, GTK_ALIGN_CENTER);
+        g_signal_connect(move, "clicked", G_CALLBACK(+[](GtkButton*, gpointer) { send_action("audio_here", ""); }), nullptr);
+        gtk_box_pack_start(GTK_BOX(box), move, FALSE, FALSE, 0);
+        gtk_container_add(GTK_CONTAINER(g_calls.banner), box);
+        gtk_widget_show_all(box);
+
+        // The desktop notification's button lands here.
+        if (GApplication* app = g_application_get_default()) {
+            if (!g_action_map_lookup_action(G_ACTION_MAP(app), "move-call-to-laptop")) {
+                GSimpleAction* action = g_simple_action_new("move-call-to-laptop", nullptr);
+                g_signal_connect(action, "activate", G_CALLBACK(+[](GSimpleAction*, GVariant*, gpointer) {
+                                     send_action("audio_here", "");
+                                 }),
+                                 nullptr);
+                g_action_map_add_action(G_ACTION_MAP(app), G_ACTION(action));
+                g_object_unref(action);
+            }
+        }
+        return g_calls.banner;
     }
 
     GtkWidget* calls_view_new() {
@@ -458,6 +626,34 @@ namespace tether::ui {
                          &g_calls);
         gtk_box_pack_start(GTK_BOX(laptop_row), g_calls.laptop_switch, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(root), laptop_row, FALSE, FALSE, 0);
+
+        GtkWidget* keypad = build_keypad();
+        gtk_widget_set_margin_top(keypad, 6);
+        gtk_widget_set_margin_bottom(keypad, 10);
+        GtkWidget* backspace = gtk_button_new_from_icon_name("edit-clear-symbolic", GTK_ICON_SIZE_BUTTON);
+        gtk_button_set_relief(GTK_BUTTON(backspace), GTK_RELIEF_NONE);
+        gtk_widget_set_tooltip_text(backspace, _("Delete"));
+        g_signal_connect(backspace,
+                         "clicked",
+                         G_CALLBACK(+[](GtkButton*, gpointer) {
+                             gint position = gtk_editable_get_position(GTK_EDITABLE(g_calls.entry));
+                             if (position > 0)
+                                 gtk_editable_delete_text(GTK_EDITABLE(g_calls.entry), position - 1, position);
+                         }),
+                         nullptr);
+        gtk_entry_set_icon_from_icon_name(GTK_ENTRY(g_calls.entry), GTK_ENTRY_ICON_SECONDARY, "edit-clear-symbolic");
+        gtk_entry_set_icon_tooltip_text(GTK_ENTRY(g_calls.entry), GTK_ENTRY_ICON_SECONDARY, _("Delete"));
+        g_signal_connect(g_calls.entry,
+                         "icon-press",
+                         G_CALLBACK(+[](GtkEntry* entry, GtkEntryIconPosition, GdkEvent*, gpointer) {
+                             gint position = gtk_editable_get_position(GTK_EDITABLE(entry));
+                             if (position > 0)
+                                 gtk_editable_delete_text(GTK_EDITABLE(entry), position - 1, position);
+                         }),
+                         nullptr);
+        g_object_ref_sink(backspace);
+        g_object_unref(backspace);
+        gtk_box_pack_start(GTK_BOX(root), keypad, FALSE, FALSE, 0);
 
         g_calls.stack = gtk_stack_new();
 
