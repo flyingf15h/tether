@@ -11,6 +11,7 @@
 
 #include <algorithm>
 #include <cstring>
+#include <cstdlib>
 #include <ctime>
 #include <gdk/gdkkeysyms.h>
 #include <glib/gstdio.h>
@@ -112,6 +113,13 @@ namespace tether::ui {
 
             // Handles of the message rows currently on screen
             std::vector<std::string> rendered;
+            // The whole conversation as the daemon sent it, and the index of the
+            // first message actually drawn: only the newest page is built up front.
+            nlohmann::json all_messages = nlohmann::json::array();
+            size_t window_start = 0;
+            bool loading_older = false;
+            // Set when the sidebar must redraw even if the thread list is unchanged (a pin).
+            bool threads_dirty = false;
 
             // The last bubble rendered
             int64_t rendered_last_stamp = 0;
@@ -202,12 +210,18 @@ namespace tether::ui {
                 g_messages.drafts[g_messages.selected_thread] = text;
         }
 
+        void end_jump();
+
         void switch_thread(const std::string& key) {
             if (key == g_messages.selected_thread)
                 return;
             stash_draft();
             g_messages.selected_thread = key;
             g_messages.rendered.clear();
+            g_messages.all_messages = nlohmann::json::array();
+            g_messages.window_start = 0;
+            g_messages.loading_older = false;
+            end_jump();
             g_messages.rendered_last_stamp = 0;
             g_messages.rendered_last_outgoing = false;
             if (g_messages.conversation)
@@ -918,6 +932,7 @@ namespace tether::ui {
 
         bool aim_at_jump_row();
         void end_jump();
+        gboolean load_older_page(gpointer);
 
         // GTK only updates the adjustment once it has laid the new rows out, and
         // its layout runs on the frame clock, after any idle this could post.
@@ -950,6 +965,11 @@ namespace tether::ui {
                         end_jump();
                 }
                 g_messages.scroll_pin = conversation_at_bottom();
+                if (gtk_adjustment_get_value(adjustment) < 400 && g_messages.window_start > 0 &&
+                    !g_messages.rendered.empty() && !g_messages.loading_older && !g_messages.jump_row) {
+                    g_messages.loading_older = true;
+                    g_idle_add(load_older_page, nullptr);
+                }
                 g_messages.scroll_restore = false;
             }
             g_messages.scroll_last_bottom = bottom;
@@ -1011,9 +1031,37 @@ namespace tether::ui {
             }
         }
 
+        void render_threads(const nlohmann::json& event);
+
+        // The daemon sends the thread list after every message, read and refresh,
+        // often several in a row. Identical lists are skipped and a burst is drawn
+        // once, shortly after it settles.
         void show_threads(const nlohmann::json& event) {
             if (!event.contains("threads") || !event["threads"].is_array())
                 return;
+            static std::string last_drawn;
+            static nlohmann::json pending;
+            static guint timer = 0;
+            const std::string dump = event["threads"].dump();
+            if (dump == last_drawn && !timer && !g_messages.threads_dirty)
+                return;
+            g_messages.threads_dirty = false;
+            pending = event;
+            if (timer)
+                return;
+            const bool first = last_drawn.empty();
+            last_drawn = dump;
+            timer = g_timeout_add(first ? 0 : 80,
+                                  +[](gpointer) -> gboolean {
+                                      timer = 0;
+                                      last_drawn = pending["threads"].dump();
+                                      render_threads(pending);
+                                      return G_SOURCE_REMOVE;
+                                  },
+                                  nullptr);
+        }
+
+        void render_threads(const nlohmann::json& event) {
 
             // Clearing the list destroys the selected row, which fires
             // row-selected(nullptr) and then again for the row that replaces it.
@@ -1099,15 +1147,26 @@ namespace tether::ui {
 
         void drop_pending_row(const std::string& body);
 
-        void append_message_rows(const nlohmann::json& messages, size_t from) {
+        void append_message_rows(const nlohmann::json& messages, size_t from, int insert_at = -1) {
+            // -1 appends; a position prepends an older page in order at the top.
+            int position = insert_at;
+            auto insert = [&](GtkWidget* row) {
+                gtk_list_box_insert(GTK_LIST_BOX(g_messages.conversation), row, position);
+                if (position >= 0)
+                    ++position;
+            };
             for (size_t i = from; i < messages.size(); ++i) {
                 const auto& message = messages[i];
                 const int64_t stamp = message.value("timestamp", static_cast<int64_t>(0));
                 const bool outgoing = message.value("outgoing", false);
                 const bool first = from == 0 && i == 0;
 
-                if (stamp > 0 && (first || !same_local_day(g_messages.rendered_last_stamp, stamp)))
-                    gtk_list_box_insert(GTK_LIST_BOX(g_messages.conversation), build_day_row(stamp), -1);
+                if (stamp > 0 && (first || !same_local_day(g_messages.rendered_last_stamp, stamp))) {
+                    GtkWidget* day = build_day_row(stamp);
+                    g_object_set_data(G_OBJECT(day), "day-stamp", GINT_TO_POINTER(1));
+                    g_object_set_data_full(G_OBJECT(day), "stamp", g_strdup(std::to_string(stamp).c_str()), g_free);
+                    insert(day);
+                }
 
                 const bool grouped = !first && outgoing == g_messages.rendered_last_outgoing &&
                                      stamp - g_messages.rendered_last_stamp < GROUP_WINDOW_SECONDS &&
@@ -1125,8 +1184,7 @@ namespace tether::ui {
                                    !same_local_day(g_messages.rendered_last_stamp, stamp);
                 if (outgoing)
                     drop_pending_row(message.value("body", ""));
-                gtk_list_box_insert(
-                    GTK_LIST_BOX(g_messages.conversation), build_message_row(message, pause, !grouped), -1);
+                insert(build_message_row(message, pause, !grouped));
                 g_messages.rendered_last_stamp = stamp;
                 g_messages.rendered_last_outgoing = outgoing;
             }
@@ -1193,6 +1251,9 @@ namespace tether::ui {
                           row);
         }
 
+        size_t message_index(const std::string& handle);
+        void render_window(size_t start);
+
         bool jump_to_handle(const std::string& handle) {
             GList* rows = gtk_container_get_children(GTK_CONTAINER(g_messages.conversation));
             GtkWidget* found = nullptr;
@@ -1202,9 +1263,83 @@ namespace tether::ui {
                     found = GTK_WIDGET(it->data);
             }
             g_list_free(rows);
+            if (!found) {
+                const size_t at = message_index(handle);
+                if (at != std::string::npos && at < g_messages.window_start) {
+                    render_window(at > 20 ? at - 20 : 0);
+                    return jump_to_handle(handle);
+                }
+            }
             if (found)
                 scroll_to_row(found);
             return found != nullptr;
+        }
+
+        // Messages built per page. A row costs about a millisecond to build, so
+        // drawing a 1500-message conversation at once froze the window for seconds.
+        constexpr size_t MESSAGE_PAGE = 150;
+
+        nlohmann::json message_slice(size_t start) {
+            nlohmann::json view = nlohmann::json::array();
+            for (size_t i = start; i < g_messages.all_messages.size(); ++i)
+                view.push_back(g_messages.all_messages[i]);
+            return view;
+        }
+
+        // Rebuilds the conversation from message `start` to the newest.
+        void render_window(size_t start) {
+            end_jump();
+            clear_list_box(g_messages.conversation);
+            g_messages.reaction_slots.clear();
+            g_messages.reply_counters.clear();
+            g_messages.rendered_last_stamp = 0;
+            g_messages.rendered_last_outgoing = false;
+            g_messages.window_start = std::min(start, g_messages.all_messages.size());
+            append_message_rows(message_slice(g_messages.window_start), 0);
+            gtk_widget_show_all(g_messages.conversation);
+        }
+
+        size_t message_index(const std::string& handle) {
+            for (size_t i = 0; i < g_messages.all_messages.size(); ++i)
+                if (g_messages.all_messages[i].value("handle", "") == handle)
+                    return i;
+            return std::string::npos;
+        }
+
+        // Scrolled near the top: draw the previous page above, keeping the view where it was.
+        gboolean load_older_page(gpointer) {
+            if (g_messages.window_start > 0 && !g_messages.rendered.empty()) {
+                if (GtkAdjustment* adjustment = conversation_adjustment())
+                    g_messages.scroll_from_bottom =
+                        conversation_bottom(adjustment) - gtk_adjustment_get_value(adjustment);
+                const size_t old_start = g_messages.window_start;
+                const size_t start = old_start > MESSAGE_PAGE ? old_start - MESSAGE_PAGE : 0;
+                nlohmann::json page = nlohmann::json::array();
+                for (size_t i = start; i < old_start; ++i)
+                    page.push_back(g_messages.all_messages[i]);
+
+                // Built on its own grouping state, then the newer state is put back.
+                const int64_t saved_stamp = g_messages.rendered_last_stamp;
+                const bool saved_outgoing = g_messages.rendered_last_outgoing;
+                g_messages.rendered_last_stamp = 0;
+                g_messages.rendered_last_outgoing = false;
+
+                // The old top row's day heading repeats if the new page ends on the same day.
+                GtkListBoxRow* old_top = gtk_list_box_get_row_at_index(GTK_LIST_BOX(g_messages.conversation), 0);
+                append_message_rows(page, 0, 0);
+                if (old_top && g_object_get_data(G_OBJECT(old_top), "day-stamp")) {
+                    const char* top_stamp = (const char*)g_object_get_data(G_OBJECT(old_top), "stamp");
+                    if (top_stamp && same_local_day(g_messages.rendered_last_stamp, std::atoll(top_stamp)))
+                        gtk_widget_destroy(GTK_WIDGET(old_top));
+                }
+                g_messages.rendered_last_stamp = saved_stamp;
+                g_messages.rendered_last_outgoing = saved_outgoing;
+                g_messages.window_start = start;
+                gtk_widget_show_all(g_messages.conversation);
+                restore_conversation_scroll(false);
+            }
+            g_messages.loading_older = false;
+            return G_SOURCE_REMOVE;
         }
 
         void show_messages(const nlohmann::json& event) {
@@ -1229,26 +1364,33 @@ namespace tether::ui {
             const bool pinned = g_messages.pin_next || opening || conversation_at_bottom();
             g_messages.pin_next = false;
 
-            const bool appended = handles.size() > g_messages.rendered.size() &&
+            const bool appended = !opening && handles.size() > g_messages.rendered.size() &&
                                   std::equal(g_messages.rendered.begin(), g_messages.rendered.end(), handles.begin());
+            const size_t previous = g_messages.rendered.size();
+            g_messages.all_messages = messages;
 
-            size_t from = g_messages.rendered.size();
-            if (!appended) {
+            if (appended) {
+                // New messages at the end: build just those.
+                append_message_rows(message_slice(g_messages.window_start), previous - g_messages.window_start);
+                gtk_widget_show_all(g_messages.conversation);
+            } else {
                 if (GtkAdjustment* adjustment = conversation_adjustment())
                     g_messages.scroll_from_bottom =
                         conversation_bottom(adjustment) - gtk_adjustment_get_value(adjustment);
-                end_jump();
-                clear_list_box(g_messages.conversation);
-                g_messages.reaction_slots.clear();
-                g_messages.reply_counters.clear();
-                g_messages.rendered_last_stamp = 0;
-                g_messages.rendered_last_outgoing = false;
-                from = 0;
+                const size_t n = messages.size();
+                size_t start = n > MESSAGE_PAGE ? n - MESSAGE_PAGE : 0;
+                // A refresh keeps the older pages already scrolled into.
+                if (!opening)
+                    start = std::min(start, g_messages.window_start);
+                // A search jump into older history draws from a little before it.
+                if (!g_messages.pending_jump.empty()) {
+                    const size_t at = message_index(g_messages.pending_jump);
+                    if (at != std::string::npos && at < start)
+                        start = at > 20 ? at - 20 : 0;
+                }
+                render_window(start);
             }
-
-            append_message_rows(messages, from);
             g_messages.rendered = handles;
-            gtk_widget_show_all(g_messages.conversation);
 
             if (pinned || !appended)
                 restore_conversation_scroll(pinned);
@@ -1397,6 +1539,18 @@ namespace tether::ui {
 
         void find_refresh() {
             g_messages.find_hits.clear();
+            // Covers the whole loaded conversation: draw back only as far as the oldest match.
+            {
+                const std::string wanted = fold(gtk_entry_get_text(GTK_ENTRY(g_messages.find_entry)));
+                if (wanted.size() >= 2) {
+                    for (size_t i = 0; i < g_messages.window_start; ++i) {
+                        if (fold(g_messages.all_messages[i].value("body", "")).find(wanted) != std::string::npos) {
+                            render_window(i);
+                            break;
+                        }
+                    }
+                }
+            }
             const std::string needle = fold(gtk_entry_get_text(GTK_ENTRY(g_messages.find_entry)));
             if (needle.size() < 2) {
                 gtk_label_set_text(GTK_LABEL(g_messages.find_count), "");
@@ -2374,7 +2528,10 @@ namespace tether::ui {
         gtk_list_box_set_sort_func(GTK_LIST_BOX(g_messages.thread_list), thread_sort, nullptr, nullptr);
         gtk_list_box_set_header_func(GTK_LIST_BOX(g_messages.thread_list), thread_header, nullptr, nullptr);
         g_signal_connect(g_messages.thread_list, "button-press-event", G_CALLBACK(on_thread_list_button), nullptr);
-        on_pins_changed([] { request_threads(); });
+        on_pins_changed([] {
+            g_messages.threads_dirty = true;
+            request_threads();
+        });
         GtkWidget* side_lists = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
         gtk_box_pack_start(GTK_BOX(side_lists), g_messages.thread_list, FALSE, FALSE, 0);
         g_messages.results_header = gtk_label_new("");

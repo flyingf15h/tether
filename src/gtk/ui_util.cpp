@@ -6,6 +6,7 @@
 #include <tether/version.hpp>
 
 #include <cmath>
+#include <map>
 
 namespace tether::ui {
 
@@ -660,7 +661,14 @@ button.tether-gif-button {
         avatar->size = size;
         avatar->initials = initials_of(name);
 
-        if (!photo_path.empty()) {
+        // Decoding and scaling a photo costs more than building the rest of a row,
+        // and the same faces are drawn on every refresh, so scaled copies are kept.
+        static std::map<std::string, GdkPixbuf*> scaled_cache;
+        const std::string cache_key = photo_path + "@" + std::to_string(size);
+        if (auto hit = scaled_cache.find(cache_key); !photo_path.empty() && hit != scaled_cache.end()) {
+            avatar->pixbuf = hit->second ? GDK_PIXBUF(g_object_ref(hit->second)) : nullptr;
+        } else if (!photo_path.empty()) {
+            scaled_cache[cache_key] = nullptr;
             if (GdkPixbuf* raw = gdk_pixbuf_new_from_file(photo_path.c_str(), nullptr)) {
                 // Cover the circle: scale the short side to fit, crop the long one.
                 const double w = gdk_pixbuf_get_width(raw), h = gdk_pixbuf_get_height(raw);
@@ -670,6 +678,8 @@ button.tether-gif-button {
                                                          std::max(1, static_cast<int>(std::lround(h * scale))),
                                                          GDK_INTERP_BILINEAR);
                 g_object_unref(raw);
+                if (avatar->pixbuf)
+                    scaled_cache[cache_key] = GDK_PIXBUF(g_object_ref(avatar->pixbuf));
             }
         }
 
