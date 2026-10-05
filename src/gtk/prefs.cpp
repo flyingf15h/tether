@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <vector>
 #include <glib.h>
 #include <tether/log.hpp>
 #include <tether/paths.hpp>
@@ -52,5 +53,49 @@ namespace tether::ui {
             debug::log(ERR, "prefs: could not write {} ({})", path, e.what());
         }
     }
+
+    namespace {
+        std::vector<void (*)()>& pin_listeners() {
+            static std::vector<void (*)()> listeners;
+            return listeners;
+        }
+
+        nlohmann::json& pins() {
+            auto& p = prefs();
+            if (!p.contains("pinned") || !p["pinned"].is_array())
+                p["pinned"] = nlohmann::json::array();
+            return p["pinned"];
+        }
+    } // namespace
+
+    int pin_index(const std::string& key) {
+        const auto& list = pins();
+        for (size_t i = 0; i < list.size(); ++i)
+            if (list[i].is_string() && list[i].get<std::string>() == key)
+                return static_cast<int>(i);
+        return -1;
+    }
+
+    bool is_pinned(const std::string& key) { return !key.empty() && pin_index(key) >= 0; }
+
+    void set_pinned(const std::string& key, bool pinned) {
+        if (key.empty() || is_pinned(key) == pinned)
+            return;
+        auto& list = pins();
+        if (pinned) {
+            list.push_back(key);
+        } else {
+            nlohmann::json kept = nlohmann::json::array();
+            for (const auto& k : list)
+                if (!(k.is_string() && k.get<std::string>() == key))
+                    kept.push_back(k);
+            list = kept;
+        }
+        prefs_save();
+        for (auto callback : pin_listeners())
+            callback();
+    }
+
+    void on_pins_changed(void (*callback)()) { pin_listeners().push_back(callback); }
 
 } // namespace tether::ui

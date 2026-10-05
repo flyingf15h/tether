@@ -1,10 +1,12 @@
 #include "contacts_view.hpp"
 #include "daemon_client.hpp"
+#include "prefs.hpp"
 #include "ui_util.hpp"
 #include <tether/i18n.hpp>
 
 #include <cstring>
 #include <string>
+#include <tether/bluetooth/messages.hpp>
 
 namespace tether::ui {
 
@@ -12,6 +14,7 @@ namespace tether::ui {
 
         struct ContactsState {
             GtkWidget* stack = nullptr;
+            nlohmann::json last;  // the list as last shown, to redraw when pins change
             GtkWidget* status_label = nullptr;
             GtkWidget* list = nullptr;
             GtkWidget* search_entry = nullptr;
@@ -83,7 +86,7 @@ namespace tether::ui {
 
             GtkWidget* label = gtk_label_new(display_address(key).c_str());
             gtk_label_set_xalign(GTK_LABEL(label), 0.0);
-            gtk_label_set_selectable(GTK_LABEL(label), TRUE);
+            // Not selectable, so no text cursor; the Copy button beside it does that job.
             gtk_label_set_ellipsize(GTK_LABEL(label), PANGO_ELLIPSIZE_END);
             gtk_label_set_max_width_chars(GTK_LABEL(label), 28);
             gtk_box_pack_start(GTK_BOX(box), label, TRUE, TRUE, 0);
@@ -180,6 +183,37 @@ namespace tether::ui {
                 }
             }
 
+            // Pinned if any of their numbers is, so it agrees with the Messages sidebar.
+            int pin = -1;
+            std::string pin_key;
+            {
+                const auto& pinned = prefs().value("pinned", nlohmann::json::array());
+                size_t start = 0;
+                while (start < keys.size()) {
+                    const size_t nl = keys.find('\n', start);
+                    const std::string key = keys.substr(start, nl - start);
+                    if (pin_key.empty())
+                        pin_key = key;
+                    for (size_t i = 0; i < pinned.size() && pin < 0; ++i)
+                        if (pinned[i].is_string() &&
+                            bluetooth::thread_bucket(pinned[i].get<std::string>()) == bluetooth::thread_bucket(key)) {
+                            pin = static_cast<int>(i);
+                            pin_key = pinned[i].get<std::string>();
+                        }
+                    if (nl == std::string::npos)
+                        break;
+                    start = nl + 1;
+                }
+            }
+            g_object_set_data(G_OBJECT(row), "pin", GINT_TO_POINTER(pin + 1));
+            g_object_set_data_full(G_OBJECT(row), "pin-key", g_strdup(pin_key.c_str()), g_free);
+            if (pin >= 0) {
+                GtkWidget* pin_icon = gtk_image_new_from_icon_name("view-pin-symbolic", GTK_ICON_SIZE_MENU);
+                gtk_widget_set_tooltip_text(pin_icon, _("Pinned"));
+                gtk_style_context_add_class(gtk_widget_get_style_context(pin_icon), "muted");
+                gtk_box_pack_end(GTK_BOX(heading), pin_icon, FALSE, FALSE, 6);
+            }
+
             set_markup(title, "<b>" + escape_markup(name.empty() ? first_address : name) + "</b>");
             g_object_set_data_full(G_OBJECT(row), "search", g_strdup(fold(haystack).c_str()), g_free);
             g_object_set_data_full(G_OBJECT(expander), "addresses", g_strdup(keys.c_str()), g_free);
@@ -190,17 +224,78 @@ namespace tether::ui {
             return row;
         }
 
+        gint contact_sort(GtkListBoxRow* a, GtkListBoxRow* b, gpointer) {
+            const int pa = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(a), "pin")) - 1;
+            const int pb = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "pin")) - 1;
+            if ((pa >= 0) != (pb >= 0))
+                return pa >= 0 ? -1 : 1;
+            if (pa >= 0)
+                return pa - pb;
+            return GPOINTER_TO_INT(g_object_get_data(G_OBJECT(a), "order")) -
+                   GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "order"));
+        }
+
+        void contact_header(GtkListBoxRow* row, GtkListBoxRow* before, gpointer) {
+            const bool pinned = g_object_get_data(G_OBJECT(row), "pin") != nullptr;
+            const bool before_pinned = before && g_object_get_data(G_OBJECT(before), "pin") != nullptr;
+            const char* title = pinned && !before ? _("Pinned") : (!pinned && before_pinned ? _("All contacts") : nullptr);
+            if (!title) {
+                gtk_list_box_row_set_header(row, nullptr);
+                return;
+            }
+            GtkWidget* label = gtk_label_new(title);
+            gtk_label_set_xalign(GTK_LABEL(label), 0.0);
+            gtk_widget_set_margin_start(label, 12);
+            gtk_widget_set_margin_top(label, 8);
+            gtk_style_context_add_class(gtk_widget_get_style_context(label), "tether-section-label");
+            gtk_widget_show(label);
+            gtk_list_box_row_set_header(row, label);
+        }
+
+        gboolean on_contact_button(GtkWidget* list, GdkEventButton* event, gpointer) {
+            if (event->type != GDK_BUTTON_PRESS || event->button != GDK_BUTTON_SECONDARY)
+                return FALSE;
+            GtkListBoxRow* row = gtk_list_box_get_row_at_y(GTK_LIST_BOX(list), static_cast<int>(event->y));
+            const char* key = row ? (const char*)g_object_get_data(G_OBJECT(row), "pin-key") : nullptr;
+            if (!key || !*key)
+                return FALSE;
+            const bool pinned = g_object_get_data(G_OBJECT(row), "pin") != nullptr;
+            GtkWidget* menu = gtk_menu_new();
+            GtkWidget* item = gtk_menu_item_new_with_label(pinned ? _("Unpin") : _("Pin"));
+            g_object_set_data_full(G_OBJECT(item), "key", g_strdup(key), g_free);
+            g_object_set_data(G_OBJECT(item), "pinned", GINT_TO_POINTER(pinned ? 1 : 0));
+            g_signal_connect(item,
+                             "activate",
+                             G_CALLBACK(+[](GtkMenuItem* i, gpointer) {
+                                 set_pinned((const char*)g_object_get_data(G_OBJECT(i), "key"),
+                                            g_object_get_data(G_OBJECT(i), "pinned") == nullptr);
+                             }),
+                             nullptr);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+            gtk_widget_show_all(menu);
+            g_signal_connect(menu, "deactivate", G_CALLBACK(+[](GtkMenuShell* m, gpointer) {
+                                 g_idle_add(+[](gpointer w) -> gboolean { gtk_widget_destroy(GTK_WIDGET(w)); return G_SOURCE_REMOVE; }, m);
+                             }), nullptr);
+            gtk_menu_popup_at_pointer(GTK_MENU(menu), reinterpret_cast<GdkEvent*>(event));
+            return TRUE;
+        }
+
         void show_contacts(const nlohmann::json& event) {
             const std::string payload = event.contains("contacts") ? event["contacts"].dump() : "";
             if (payload == g_contacts.shown)
                 return;
             g_contacts.shown = payload;
 
+            g_contacts.last = event;
             clear_list_box(g_contacts.list);
             const bool empty = !event.contains("contacts") || event["contacts"].empty();
             if (!empty) {
-                for (const auto& contact : event["contacts"])
-                    gtk_list_box_insert(GTK_LIST_BOX(g_contacts.list), build_row(contact), -1);
+                int order = 0;
+                for (const auto& contact : event["contacts"]) {
+                    GtkWidget* row = build_row(contact);
+                    g_object_set_data(G_OBJECT(row), "order", GINT_TO_POINTER(++order));
+                    gtk_list_box_insert(GTK_LIST_BOX(g_contacts.list), row, -1);
+                }
             }
             gtk_widget_show_all(g_contacts.list);
             gtk_stack_set_visible_child_name(GTK_STACK(g_contacts.stack), empty ? "status" : "list");
@@ -261,6 +356,16 @@ namespace tether::ui {
         g_contacts.list = gtk_list_box_new();
         gtk_list_box_set_selection_mode(GTK_LIST_BOX(g_contacts.list), GTK_SELECTION_NONE);
         gtk_list_box_set_filter_func(GTK_LIST_BOX(g_contacts.list), contact_visible, nullptr, nullptr);
+        gtk_list_box_set_sort_func(GTK_LIST_BOX(g_contacts.list), contact_sort, nullptr, nullptr);
+        gtk_list_box_set_header_func(GTK_LIST_BOX(g_contacts.list), contact_header, nullptr, nullptr);
+        g_signal_connect(g_contacts.list, "button-press-event", G_CALLBACK(on_contact_button), nullptr);
+        on_pins_changed([] {
+            if (g_contacts.last.is_null())
+                return;
+            g_contacts.shown.clear();
+            const nlohmann::json last = g_contacts.last;
+            show_contacts(last);
+        });
         gtk_container_add(GTK_CONTAINER(scroll), g_contacts.list);
         gtk_box_pack_start(GTK_BOX(list_side), scroll, TRUE, TRUE, 0);
         gtk_stack_add_named(GTK_STACK(g_contacts.stack), list_side, "list");

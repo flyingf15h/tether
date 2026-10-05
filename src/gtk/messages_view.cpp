@@ -250,6 +250,17 @@ namespace tether::ui {
             daemon_send(j);
         }
 
+        // Where a conversation sits among the pins, or -1. Matches by number, so a
+        // pin made as "+1647…" still applies to a thread keyed "647…".
+        int thread_pin_index(const std::string& thread) {
+            const auto& list = prefs().value("pinned", nlohmann::json::array());
+            const std::string bucket = bluetooth::thread_bucket(thread);
+            for (size_t i = 0; i < list.size(); ++i)
+                if (list[i].is_string() && bluetooth::thread_bucket(list[i].get<std::string>()) == bucket)
+                    return static_cast<int>(i);
+            return -1;
+        }
+
         GtkWidget* build_thread_row(const nlohmann::json& thread) {
             const std::string key = thread.value("thread", "");
             const std::string address = thread.value("address", "");
@@ -270,6 +281,8 @@ namespace tether::ui {
             g_object_set_data_full(G_OBJECT(row), "thread", g_strdup(key.c_str()), g_free);
             g_object_set_data_full(G_OBJECT(row), "name", g_strdup(name.c_str()), g_free);
             g_object_set_data_full(G_OBJECT(row), "photo", g_strdup(thread.value("photo", "").c_str()), g_free);
+            const int pin = thread_pin_index(key);
+            g_object_set_data(G_OBJECT(row), "pin", GINT_TO_POINTER(pin + 1));
             g_object_set_data_full(
                 G_OBJECT(row), "search", g_strdup(fold(name + " " + address + " " + preview).c_str()), g_free);
             // The daemon owns the decision about whether a group can be replied
@@ -305,6 +318,13 @@ namespace tether::ui {
             gtk_box_pack_start(GTK_BOX(box), labels, TRUE, TRUE, 0);
 
             GtkWidget* meta = gtk_box_new(GTK_ORIENTATION_VERTICAL, 4);
+            if (pin >= 0) {
+                GtkWidget* pin_icon = gtk_image_new_from_icon_name("view-pin-symbolic", GTK_ICON_SIZE_MENU);
+                gtk_widget_set_tooltip_text(pin_icon, _("Pinned"));
+                gtk_widget_set_halign(pin_icon, GTK_ALIGN_END);
+                gtk_style_context_add_class(gtk_widget_get_style_context(pin_icon), "muted");
+                gtk_box_pack_end(GTK_BOX(meta), pin_icon, FALSE, FALSE, 0);
+            }
             gtk_widget_set_valign(meta, GTK_ALIGN_START);
 
             const std::string when = format_thread_time(stamp, std::time(nullptr));
@@ -582,6 +602,114 @@ namespace tether::ui {
             return row;
         }
 
+        // Right-click on a message: Copy, and Reply for theirs.
+        gboolean on_message_button(GtkWidget* widget, GdkEventButton* event, gpointer) {
+            if (event->type != GDK_BUTTON_PRESS || event->button != GDK_BUTTON_SECONDARY)
+                return FALSE;
+            const char* body = message_body(widget);
+            if (!body)
+                return FALSE;
+            GtkWidget* menu = gtk_menu_new();
+            GtkWidget* copy = gtk_menu_item_new_with_label(_("Copy"));
+            g_object_set_data_full(G_OBJECT(copy), "body", g_strdup(body), g_free);
+            g_signal_connect(copy,
+                             "activate",
+                             G_CALLBACK(+[](GtkMenuItem* item, gpointer) {
+                                 gtk_clipboard_set_text(gtk_clipboard_get(GDK_SELECTION_CLIPBOARD),
+                                                        (const char*)g_object_get_data(G_OBJECT(item), "body"), -1);
+                                 set_status_main(_("Copied to the clipboard."));
+                             }),
+                             nullptr);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), copy);
+            if (!g_object_get_data(G_OBJECT(widget), "outgoing")) {
+                GtkWidget* reply = gtk_menu_item_new_with_label(_("Reply"));
+                g_object_set_data_full(G_OBJECT(reply), "body", g_strdup(body), g_free);
+                g_signal_connect(reply,
+                                 "activate",
+                                 G_CALLBACK(+[](GtkMenuItem* item, gpointer) {
+                                     show_reply_bar((const char*)g_object_get_data(G_OBJECT(item), "body"));
+                                 }),
+                                 nullptr);
+                gtk_menu_shell_append(GTK_MENU_SHELL(menu), reply);
+            }
+            gtk_widget_show_all(menu);
+            g_signal_connect(menu, "deactivate", G_CALLBACK(+[](GtkMenuShell* m, gpointer) {
+                                 g_idle_add(+[](gpointer w) -> gboolean { gtk_widget_destroy(GTK_WIDGET(w)); return G_SOURCE_REMOVE; }, m);
+                             }), nullptr);
+            gtk_menu_popup_at_pointer(GTK_MENU(menu), reinterpret_cast<GdkEvent*>(event));
+            return TRUE;
+        }
+
+        // ---- pinned conversations ----
+
+        // Pinned first in pin order, then everything else in the daemon's order (newest first).
+        gint thread_sort(GtkListBoxRow* a, GtkListBoxRow* b, gpointer) {
+            const int pa = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(a), "pin")) - 1;
+            const int pb = GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "pin")) - 1;
+            if ((pa >= 0) != (pb >= 0))
+                return pa >= 0 ? -1 : 1;
+            if (pa >= 0)
+                return pa - pb;
+            return GPOINTER_TO_INT(g_object_get_data(G_OBJECT(a), "order")) -
+                   GPOINTER_TO_INT(g_object_get_data(G_OBJECT(b), "order"));
+        }
+
+        void thread_header(GtkListBoxRow* row, GtkListBoxRow* before, gpointer) {
+            const bool pinned = g_object_get_data(G_OBJECT(row), "pin") != nullptr;
+            const bool before_pinned = before && g_object_get_data(G_OBJECT(before), "pin") != nullptr;
+            const char* title = nullptr;
+            if (pinned && !before)
+                title = _("Pinned");
+            else if (!pinned && before_pinned)
+                title = _("Messages");
+            if (!title) {
+                gtk_list_box_row_set_header(row, nullptr);
+                return;
+            }
+            GtkWidget* label = gtk_label_new(title);
+            gtk_label_set_xalign(GTK_LABEL(label), 0.0);
+            gtk_widget_set_margin_start(label, 16);
+            gtk_widget_set_margin_top(label, 8);
+            gtk_widget_set_margin_bottom(label, 2);
+            gtk_style_context_add_class(gtk_widget_get_style_context(label), "tether-section-label");
+            gtk_widget_show(label);
+            gtk_list_box_row_set_header(row, label);
+        }
+
+        void request_threads();
+
+        gboolean on_thread_list_button(GtkWidget* list, GdkEventButton* event, gpointer) {
+            if (event->type != GDK_BUTTON_PRESS || event->button != GDK_BUTTON_SECONDARY)
+                return FALSE;
+            GtkListBoxRow* row = gtk_list_box_get_row_at_y(GTK_LIST_BOX(list), static_cast<int>(event->y));
+            const char* thread = row ? (const char*)g_object_get_data(G_OBJECT(row), "thread") : nullptr;
+            if (!thread || !*thread)
+                return FALSE;
+            const bool pinned = thread_pin_index(thread) >= 0;
+            GtkWidget* menu = gtk_menu_new();
+            GtkWidget* item = gtk_menu_item_new_with_label(pinned ? _("Unpin") : _("Pin"));
+            g_object_set_data_full(G_OBJECT(item), "thread", g_strdup(thread), g_free);
+            g_signal_connect(item,
+                             "activate",
+                             G_CALLBACK(+[](GtkMenuItem* i, gpointer) {
+                                 const std::string key = (const char*)g_object_get_data(G_OBJECT(i), "thread");
+                                 // Unpin by whichever spelling was pinned.
+                                 const int at = thread_pin_index(key);
+                                 if (at >= 0)
+                                     set_pinned(prefs()["pinned"][at].get<std::string>(), false);
+                                 else
+                                     set_pinned(key, true);
+                             }),
+                             nullptr);
+            gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+            gtk_widget_show_all(menu);
+            g_signal_connect(menu, "deactivate", G_CALLBACK(+[](GtkMenuShell* m, gpointer) {
+                                 g_idle_add(+[](gpointer w) -> gboolean { gtk_widget_destroy(GTK_WIDGET(w)); return G_SOURCE_REMOVE; }, m);
+                             }), nullptr);
+            gtk_menu_popup_at_pointer(GTK_MENU(menu), reinterpret_cast<GdkEvent*>(event));
+            return TRUE;
+        }
+
         GtkWidget* build_message_row(const nlohmann::json& message, bool show_stamp, bool new_group) {
             const bool outgoing = message.value("outgoing", false);
             const std::string body = message.value("body", "");
@@ -676,7 +804,8 @@ namespace tether::ui {
             gtk_label_set_line_wrap_mode(GTK_LABEL(bubble), PANGO_WRAP_WORD_CHAR);
             gtk_label_set_max_width_chars(GTK_LABEL(bubble), 44);
             gtk_label_set_xalign(GTK_LABEL(bubble), 0.0);
-            gtk_label_set_selectable(GTK_LABEL(bubble), TRUE);
+            // Not selectable: a text cursor in someone else's message reads as editable.
+            // Right-click offers Copy instead.
             // Without this the label stretches to whatever else is in the row and
             // the bubble reads as a full-width bar rather than wrapping the text.
             gtk_widget_set_halign(bubble, side);
@@ -719,9 +848,11 @@ namespace tether::ui {
             gtk_box_pack_start(GTK_BOX(actions),
                                message_action("face-smile-symbolic", _("React"), G_CALLBACK(on_react_clicked), text),
                                FALSE, FALSE, 0);
-            gtk_box_pack_start(GTK_BOX(actions),
-                               message_action("mail-reply-sender-symbolic", _("Reply"), G_CALLBACK(on_reply_clicked), text),
-                               FALSE, FALSE, 0);
+            // Replies are for what they said; replying to yourself is not offered.
+            if (!outgoing)
+                gtk_box_pack_start(GTK_BOX(actions),
+                                   message_action("mail-reply-sender-symbolic", _("Reply"), G_CALLBACK(on_reply_clicked), text),
+                                   FALSE, FALSE, 0);
             gtk_widget_set_opacity(actions, 0.0);
 
             GtkWidget* line = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 4);
@@ -738,6 +869,10 @@ namespace tether::ui {
             gtk_widget_add_events(hover, GDK_ENTER_NOTIFY_MASK | GDK_LEAVE_NOTIFY_MASK);
             g_signal_connect(hover, "enter-notify-event", G_CALLBACK(on_message_hover), actions);
             g_signal_connect(hover, "leave-notify-event", G_CALLBACK(on_message_hover), actions);
+            g_object_set_data_full(G_OBJECT(hover), "body", g_strdup(text.c_str()), g_free);
+            g_object_set_data(G_OBJECT(hover), "outgoing", GINT_TO_POINTER(outgoing ? 1 : 0));
+            gtk_widget_add_events(hover, GDK_BUTTON_PRESS_MASK);
+            g_signal_connect(hover, "button-press-event", G_CALLBACK(on_message_button), nullptr);
             gtk_container_add(GTK_CONTAINER(hover), line);
             gtk_box_pack_start(GTK_BOX(box), hover, FALSE, FALSE, 0);
 
@@ -899,8 +1034,10 @@ namespace tether::ui {
             update_placeholder();
 
             GtkWidget* reselect = nullptr;
+            int order = 0;
             for (const auto& thread : event["threads"]) {
                 GtkWidget* row = build_thread_row(thread);
+                g_object_set_data(G_OBJECT(row), "order", GINT_TO_POINTER(++order));
                 gtk_list_box_insert(GTK_LIST_BOX(g_messages.thread_list), row, -1);
                 if (same_thread(thread.value("thread", ""), g_messages.selected_thread))
                     reselect = row;
@@ -2234,6 +2371,10 @@ namespace tether::ui {
             g_signal_connect(g_messages.thread_list, "row-selected", G_CALLBACK(on_thread_selected), nullptr);
         g_signal_connect(g_messages.thread_list, "row-activated", G_CALLBACK(on_thread_activated), nullptr);
         gtk_list_box_set_filter_func(GTK_LIST_BOX(g_messages.thread_list), thread_visible, nullptr, nullptr);
+        gtk_list_box_set_sort_func(GTK_LIST_BOX(g_messages.thread_list), thread_sort, nullptr, nullptr);
+        gtk_list_box_set_header_func(GTK_LIST_BOX(g_messages.thread_list), thread_header, nullptr, nullptr);
+        g_signal_connect(g_messages.thread_list, "button-press-event", G_CALLBACK(on_thread_list_button), nullptr);
+        on_pins_changed([] { request_threads(); });
         GtkWidget* side_lists = gtk_box_new(GTK_ORIENTATION_VERTICAL, 0);
         gtk_box_pack_start(GTK_BOX(side_lists), g_messages.thread_list, FALSE, FALSE, 0);
         g_messages.results_header = gtk_label_new("");
