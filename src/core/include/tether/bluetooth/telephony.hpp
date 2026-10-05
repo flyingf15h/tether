@@ -2,6 +2,7 @@
 
 #include "tether/bluetooth/objects.hpp"
 
+#include <chrono>
 #include <gio/gio.h>
 #include <memory>
 #include <mutex>
@@ -122,6 +123,9 @@ namespace tether::bluetooth {
         std::string address_;
         mutable std::mutex audio_mutex_;
         bool muted_ = false;
+        // A claim with no call object: when it was made, and whether audio came here since.
+        std::chrono::steady_clock::time_point claimed_at_{};
+        bool claimed_audio_active_ = false;
         // Calls already brought here once, and calls the user chose to keep on the phone.
         std::set<std::string> pulled_;
         std::set<std::string> on_phone_;

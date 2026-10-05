@@ -26,6 +26,7 @@ namespace tether::ui {
             GtkWidget* laptop_switch = nullptr;
             // "On a call on your iPhone" strip shown over every tab.
             GtkWidget* banner = nullptr;
+            GtkWidget* app_call_row = nullptr;  // manual pull for calls the phone does not announce
             GtkWidget* banner_label = nullptr;
             std::string banner_call;          // path of the call the strip is about
             std::set<std::string> notified;   // calls already announced on the desktop
@@ -529,6 +530,8 @@ namespace tether::ui {
             g_calls.audio_routable = !audio.empty();
             g_calls.audio_here = audio == "active";
             gtk_widget_set_visible(g_calls.dial_button, g_calls.audio_routable);
+            if (g_calls.app_call_row)
+                gtk_widget_set_visible(g_calls.app_call_row, g_calls.audio_routable && !g_calls.audio_here);
             update_banner();
             set_text(g_calls.status_label,
                      g_calls.available
@@ -626,6 +629,30 @@ namespace tether::ui {
                          &g_calls);
         gtk_box_pack_start(GTK_BOX(laptop_row), g_calls.laptop_switch, FALSE, FALSE, 0);
         gtk_box_pack_start(GTK_BOX(root), laptop_row, FALSE, FALSE, 0);
+
+        // FaceTime, WhatsApp and other app calls never appear as calls over
+        // Hands-Free, so nothing can detect them; this pulls whatever audio the
+        // phone has to the laptop on request.
+        g_calls.app_call_row = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 8);
+        gtk_container_set_border_width(GTK_CONTAINER(g_calls.app_call_row), 10);
+        GtkWidget* app_call_text = gtk_box_new(GTK_ORIENTATION_VERTICAL, 2);
+        GtkWidget* app_call_title = gtk_label_new(_("On a FaceTime or app call?"));
+        gtk_label_set_xalign(GTK_LABEL(app_call_title), 0.0);
+        gtk_box_pack_start(GTK_BOX(app_call_text), app_call_title, FALSE, FALSE, 0);
+        GtkWidget* app_call_hint = gtk_label_new(_("The phone does not announce those, but its audio can still come here."));
+        gtk_label_set_xalign(GTK_LABEL(app_call_hint), 0.0);
+        gtk_label_set_line_wrap(GTK_LABEL(app_call_hint), TRUE);
+        gtk_style_context_add_class(gtk_widget_get_style_context(app_call_hint), "muted");
+        gtk_box_pack_start(GTK_BOX(app_call_text), app_call_hint, FALSE, FALSE, 0);
+        gtk_box_pack_start(GTK_BOX(g_calls.app_call_row), app_call_text, TRUE, TRUE, 0);
+        GtkWidget* pull = gtk_button_new_with_label(_("Bring phone audio to laptop"));
+        gtk_widget_set_valign(pull, GTK_ALIGN_CENTER);
+        g_signal_connect(pull, "clicked", G_CALLBACK(+[](GtkButton*, gpointer) { send_action("audio_here", ""); }), nullptr);
+        gtk_box_pack_start(GTK_BOX(g_calls.app_call_row), pull, FALSE, FALSE, 0);
+        gtk_widget_set_no_show_all(g_calls.app_call_row, TRUE);
+        gtk_widget_show_all(g_calls.app_call_row);
+        gtk_widget_hide(g_calls.app_call_row);
+        gtk_box_pack_start(GTK_BOX(root), g_calls.app_call_row, FALSE, FALSE, 0);
 
         GtkWidget* keypad = build_keypad();
         gtk_widget_set_margin_top(keypad, 6);

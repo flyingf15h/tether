@@ -5,6 +5,7 @@
 #include <tether/i18n.hpp>
 
 #include <algorithm>
+#include <chrono>
 #include <atomic>
 #include <cstdlib>
 #include <cctype>
@@ -300,6 +301,8 @@ namespace tether::bluetooth {
         std::lock_guard<std::mutex> lock(audio_mutex_);
         audio_claimed_ = true;
         claimed_call_seen_ = !snap.calls.empty();
+        claimed_audio_active_ = false;
+        claimed_at_ = std::chrono::steady_clock::now();
         for (const auto& call : snap.calls)
             on_phone_.erase(call.path);
         return true;
@@ -332,9 +335,20 @@ namespace tether::bluetooth {
         const bool laptop = calls_on_laptop();
 
         if (snap.calls.empty()) {
-            // A dial from here is claimed before its call object exists.
-            if (audio_claimed_ && !claimed_call_seen_)
-                return;
+            // Claimed with no call object: a dial from here that has not shown up
+            // yet, or audio pulled for an app call (FaceTime, WhatsApp) the phone
+            // never announces over Hands-Free. Hold the claim while that audio is
+            // here; once it drops, or never arrives within a minute, it is over.
+            if (audio_claimed_ && !claimed_call_seen_) {
+                if (snap.audio_state == "active") {
+                    claimed_audio_active_ = true;
+                    return;
+                }
+                const bool expired = std::chrono::steady_clock::now() - claimed_at_ > std::chrono::seconds(60);
+                if (!claimed_audio_active_ && !expired)
+                    return;
+            }
+            claimed_audio_active_ = false;
             const bool ended = audio_claimed_ || !pulled_.empty();
             audio_claimed_ = claimed_call_seen_ = false;
             pulled_.clear();
