@@ -1770,13 +1770,12 @@ msgid "Hang up"
 msgstr "挂断"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "You're on a call on your iPhone"
-msgstr "从 iPhone 拨打电话。"
+msgstr "你正在 iPhone 上通话"
 
 #: src/gtk/calls_view.cpp
 msgid "On a call with <b>{}</b> on your iPhone"
-msgstr ""
+msgstr "正在 iPhone 上与 <b>{}</b> 通话"
 
 #: src/gtk/calls_view.cpp
 msgid "No calls."
@@ -1820,19 +1819,19 @@ msgstr "所有通话都在这台电脑上播放，包括在 iPhone 上接听的�
 
 #: src/gtk/calls_view.cpp
 msgid "On a FaceTime or app call?"
-msgstr ""
+msgstr "在进行 FaceTime 或应用通话？"
 
 #: src/gtk/calls_view.cpp
 msgid "The phone does not announce those, but its audio can still come here."
-msgstr ""
+msgstr "手机不会通告这类通话，但其音频仍可转到这里。"
 
 #: src/gtk/calls_view.cpp
 msgid "Bring phone audio to laptop"
-msgstr ""
+msgstr "将手机音频转到笔记本"
 
 #: src/gtk/calls_view.cpp
 msgid "Delete"
-msgstr ""
+msgstr "删除"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
@@ -1859,20 +1858,19 @@ msgstr "给 {} 发信息"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pinned"
-msgstr ""
+msgstr "已置顶"
 
 #: src/gtk/contacts_view.cpp
-#, fuzzy
 msgid "All contacts"
-msgstr "通讯录"
+msgstr "所有联系人"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Unpin"
-msgstr ""
+msgstr "取消置顶"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pin"
-msgstr ""
+msgstr "置顶"
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2500,33 +2498,29 @@ msgid "Sent"
 msgstr "已发送"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "That message is older than what is loaded for this conversation."
-msgstr "该信息已不在会话记录中。"
+msgstr "这条信息早于此会话已加载的内容。"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "No messages match"
-msgstr "%s 中没有信息\n"
+msgstr "没有匹配的信息"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} message"
 msgid_plural "{} messages"
-msgstr[0] "{} 条未读信息"
+msgstr[0] "{} 条信息"
 
 #: src/gtk/messages_view.cpp
 msgid "You"
-msgstr ""
+msgstr "我"
 
 #: src/gtk/messages_view.cpp
 msgid "No matches"
-msgstr ""
+msgstr "无匹配项"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} of {}"
-msgstr "（第 {0} 个，共 {1} 个）"
+msgstr "第 {0} 个，共 {1} 个"
 
 #: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
@@ -2569,9 +2563,8 @@ msgid "Pasted image"
 msgstr "粘贴的图片"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} is larger than the 200 MB upload limit."
-msgstr "{} 超过了 catbox.moe 的 200 MB 上限。"
+msgstr "{} 超过了 200 MB 的上传限制。"
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
@@ -2581,7 +2574,7 @@ msgstr "无法保存粘贴的图片。"
 msgid ""
 "The copied image was empty. Take the screenshot again, or save it and attach "
 "the file."
-msgstr ""
+msgstr "复制的图片是空的。请重新截图，或保存后以附件形式添加文件。"
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2628,22 +2621,20 @@ msgid "Phone number or email"
 msgstr "电话号码或电子邮件"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search this conversation (Ctrl+F)"
-msgstr "搜索会话"
+msgstr "在此会话中搜索 (Ctrl+F)"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search messages"
-msgstr "搜索会话"
+msgstr "搜索信息"
 
 #: src/gtk/messages_view.cpp
 msgid "Older match"
-msgstr ""
+msgstr "上一个匹配项"
 
 #: src/gtk/messages_view.cpp
 msgid "Newer match"
-msgstr ""
+msgstr "下一个匹配项"
 
 #: src/gtk/messages_view.cpp
 msgid "Cancel reply"
@@ -2654,9 +2645,8 @@ msgid "Attach images or files"
 msgstr "附加图片或文件"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Send a GIF"
-msgstr "发送文件"
+msgstr "发送 GIF"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2671,11 +2661,12 @@ msgid "Retry"
 msgstr "重试"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid ""
 "Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
 "sent as a link: anyone with the link can open the file."
-msgstr "以 catbox.moe 链接发送：任何拿到链接的人都能打开该文件。"
+msgstr ""
+"上传到公共托管服务（catbox.moe，若被屏蔽则使用 0x0.st）并以链接形式发送：任何"
+"拿到链接的人都能打开文件。"
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"
@@ -2711,14 +2702,13 @@ msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr "不为信息或 iPhone 应用显示桌面弹窗。来电仍会响铃。"
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Message notifications"
-msgstr "信息、通知"
+msgstr "信息通知"
 
 #: src/gtk/notifications_view.cpp
 msgid ""
 "A popup for each new text. The unread count on the app icon stays either way."
-msgstr ""
+msgstr "每条新信息弹出提示。应用图标上的未读数在两种情况下都会保留。"
 
 #: src/gtk/settings_view.cpp
 msgid ""

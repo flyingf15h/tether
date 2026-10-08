@@ -1841,13 +1841,12 @@ msgid "Hang up"
 msgstr "Lägg på"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "You're on a call on your iPhone"
-msgstr "Ring ett samtal från iPhone."
+msgstr "Du är i ett samtal på din iPhone"
 
 #: src/gtk/calls_view.cpp
 msgid "On a call with <b>{}</b> on your iPhone"
-msgstr ""
+msgstr "I samtal med <b>{}</b> på din iPhone"
 
 #: src/gtk/calls_view.cpp
 msgid "No calls."
@@ -1892,19 +1891,19 @@ msgstr ""
 
 #: src/gtk/calls_view.cpp
 msgid "On a FaceTime or app call?"
-msgstr ""
+msgstr "I ett FaceTime- eller appsamtal?"
 
 #: src/gtk/calls_view.cpp
 msgid "The phone does not announce those, but its audio can still come here."
-msgstr ""
+msgstr "Telefonen meddelar inte sådana, men ljudet kan ändå komma hit."
 
 #: src/gtk/calls_view.cpp
 msgid "Bring phone audio to laptop"
-msgstr ""
+msgstr "Flytta telefonens ljud till datorn"
 
 #: src/gtk/calls_view.cpp
 msgid "Delete"
-msgstr ""
+msgstr "Radera"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
@@ -1931,20 +1930,19 @@ msgstr "Skicka meddelande till {}"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pinned"
-msgstr ""
+msgstr "Fästa"
 
 #: src/gtk/contacts_view.cpp
-#, fuzzy
 msgid "All contacts"
-msgstr "Kontakter"
+msgstr "Alla kontakter"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Unpin"
-msgstr ""
+msgstr "Lossa"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pin"
-msgstr ""
+msgstr "Fäst"
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2589,34 +2587,31 @@ msgid "Sent"
 msgstr "Skickat"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "That message is older than what is loaded for this conversation."
-msgstr "Det meddelandet finns inte längre i konversationshistoriken."
+msgstr ""
+"Det meddelandet är äldre än det som har lästs in för den här konversationen."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "No messages match"
-msgstr "Inga meddelanden i %s\n"
+msgstr "Inga meddelanden matchar"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} message"
 msgid_plural "{} messages"
-msgstr[0] "{} oläst meddelande"
-msgstr[1] "{} olästa meddelanden"
+msgstr[0] "{} meddelande"
+msgstr[1] "{} meddelanden"
 
 #: src/gtk/messages_view.cpp
 msgid "You"
-msgstr ""
+msgstr "Du"
 
 #: src/gtk/messages_view.cpp
 msgid "No matches"
-msgstr ""
+msgstr "Inga träffar"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} of {}"
-msgstr "({0} av {1})"
+msgstr "{} av {}"
 
 #: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
@@ -2659,9 +2654,8 @@ msgid "Pasted image"
 msgstr "Inklistrad bild"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} is larger than the 200 MB upload limit."
-msgstr "{} är större än catbox.moes gräns på 200 MB."
+msgstr "{} är större än uppladdningsgränsen på 200 MB."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
@@ -2672,6 +2666,8 @@ msgid ""
 "The copied image was empty. Take the screenshot again, or save it and attach "
 "the file."
 msgstr ""
+"Den kopierade bilden var tom. Ta skärmbilden igen, eller spara den och "
+"bifoga filen."
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2718,22 +2714,20 @@ msgid "Phone number or email"
 msgstr "Telefonnummer eller e-post"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search this conversation (Ctrl+F)"
-msgstr "Sök konversationer"
+msgstr "Sök i den här konversationen (Ctrl+F)"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search messages"
-msgstr "Sök konversationer"
+msgstr "Sök meddelanden"
 
 #: src/gtk/messages_view.cpp
 msgid "Older match"
-msgstr ""
+msgstr "Äldre träff"
 
 #: src/gtk/messages_view.cpp
 msgid "Newer match"
-msgstr ""
+msgstr "Nyare träff"
 
 #: src/gtk/messages_view.cpp
 msgid "Cancel reply"
@@ -2744,9 +2738,8 @@ msgid "Attach images or files"
 msgstr "Bifoga bilder eller filer"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Send a GIF"
-msgstr "Skicka fil"
+msgstr "Skicka en GIF"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2761,11 +2754,12 @@ msgid "Retry"
 msgstr "Försök igen"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid ""
 "Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
 "sent as a link: anyone with the link can open the file."
-msgstr "Skickas som catbox.moe-länk: alla som har länken kan öppna filen."
+msgstr ""
+"Laddas upp till en offentlig värd (catbox.moe, eller 0x0.st om den är "
+"blockerad) och skickas som en länk: alla som har länken kan öppna filen."
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"
@@ -2803,14 +2797,15 @@ msgstr ""
 "fortfarande."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Message notifications"
-msgstr "meddelanden, aviseringar"
+msgstr "Aviseringar för meddelanden"
 
 #: src/gtk/notifications_view.cpp
 msgid ""
 "A popup for each new text. The unread count on the app icon stays either way."
 msgstr ""
+"En popup för varje nytt meddelande. Antalet olästa på appikonen visas i båda "
+"fallen."
 
 #: src/gtk/settings_view.cpp
 msgid ""

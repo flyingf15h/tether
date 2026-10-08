@@ -1810,13 +1810,12 @@ msgid "Hang up"
 msgstr "끊기"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "You're on a call on your iPhone"
-msgstr "iPhone에서 전화를 겁니다."
+msgstr "iPhone에서 통화 중입니다"
 
 #: src/gtk/calls_view.cpp
 msgid "On a call with <b>{}</b> on your iPhone"
-msgstr ""
+msgstr "iPhone에서 <b>{}</b>님과 통화 중"
 
 #: src/gtk/calls_view.cpp
 msgid "No calls."
@@ -1860,19 +1859,20 @@ msgstr "iPhone에서 받은 통화를 포함해 모든 통화를 이 컴퓨터�
 
 #: src/gtk/calls_view.cpp
 msgid "On a FaceTime or app call?"
-msgstr ""
+msgstr "FaceTime 또는 앱 통화 중인가요?"
 
 #: src/gtk/calls_view.cpp
 msgid "The phone does not announce those, but its audio can still come here."
 msgstr ""
+"휴대폰이 이런 통화를 알리지는 않지만, 오디오는 여기로 가져올 수 있습니다."
 
 #: src/gtk/calls_view.cpp
 msgid "Bring phone audio to laptop"
-msgstr ""
+msgstr "휴대폰 오디오를 노트북으로 가져오기"
 
 #: src/gtk/calls_view.cpp
 msgid "Delete"
-msgstr ""
+msgstr "지우기"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
@@ -1899,20 +1899,19 @@ msgstr "{}에 메시지 보내기"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pinned"
-msgstr ""
+msgstr "고정됨"
 
 #: src/gtk/contacts_view.cpp
-#, fuzzy
 msgid "All contacts"
-msgstr "연락처"
+msgstr "모든 연락처"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Unpin"
-msgstr ""
+msgstr "고정 해제"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pin"
-msgstr ""
+msgstr "고정"
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2548,33 +2547,29 @@ msgid "Sent"
 msgstr "보냄"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "That message is older than what is loaded for this conversation."
-msgstr "그 메시지는 더 이상 대화 기록에 없습니다."
+msgstr "이 메시지는 이 대화에 불러온 범위보다 오래되었습니다."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "No messages match"
-msgstr "%s에 메시지가 없습니다\n"
+msgstr "일치하는 메시지 없음"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} message"
 msgid_plural "{} messages"
-msgstr[0] "읽지 않은 메시지 {}개"
+msgstr[0] "메시지 {}개"
 
 #: src/gtk/messages_view.cpp
 msgid "You"
-msgstr ""
+msgstr "나"
 
 #: src/gtk/messages_view.cpp
 msgid "No matches"
-msgstr ""
+msgstr "일치 항목 없음"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} of {}"
-msgstr "({1}개 중 {0}개)"
+msgstr "{1}개 중 {0}번째"
 
 #: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
@@ -2617,9 +2612,8 @@ msgid "Pasted image"
 msgstr "붙여넣은 이미지"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} is larger than the 200 MB upload limit."
-msgstr "{}이(가) catbox.moe의 200MB 제한을 넘습니다."
+msgstr "{}은(는) 업로드 한도 200MB보다 큽니다."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
@@ -2630,6 +2624,8 @@ msgid ""
 "The copied image was empty. Take the screenshot again, or save it and attach "
 "the file."
 msgstr ""
+"복사한 이미지가 비어 있습니다. 스크린샷을 다시 찍거나, 저장한 뒤 파일을 첨부"
+"하세요."
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2676,22 +2672,20 @@ msgid "Phone number or email"
 msgstr "전화번호 또는 이메일"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search this conversation (Ctrl+F)"
-msgstr "대화 검색"
+msgstr "이 대화에서 검색 (Ctrl+F)"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search messages"
-msgstr "대화 검색"
+msgstr "메시지 검색"
 
 #: src/gtk/messages_view.cpp
 msgid "Older match"
-msgstr ""
+msgstr "이전 일치 항목"
 
 #: src/gtk/messages_view.cpp
 msgid "Newer match"
-msgstr ""
+msgstr "다음 일치 항목"
 
 #: src/gtk/messages_view.cpp
 msgid "Cancel reply"
@@ -2702,9 +2696,8 @@ msgid "Attach images or files"
 msgstr "이미지나 파일 첨부"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Send a GIF"
-msgstr "파일 보내기"
+msgstr "GIF 보내기"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2719,13 +2712,12 @@ msgid "Retry"
 msgstr "다시 시도"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid ""
 "Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
 "sent as a link: anyone with the link can open the file."
 msgstr ""
-"catbox.moe 링크로 보내집니다. 링크가 있는 사람은 누구나 파일을 열 수 있습니"
-"다."
+"공개 호스트(catbox.moe, 차단된 경우 0x0.st)에 업로드되어 링크로 전송됩니다. "
+"링크가 있는 사람은 누구나 파일을 열 수 있습니다."
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"
@@ -2762,14 +2754,15 @@ msgstr ""
 "메시지나 iPhone 앱의 데스크톱 팝업을 표시하지 않습니다. 전화는 계속 울립니다."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Message notifications"
-msgstr "메시지, 알림"
+msgstr "메시지 알림"
 
 #: src/gtk/notifications_view.cpp
 msgid ""
 "A popup for each new text. The unread count on the app icon stays either way."
 msgstr ""
+"새 메시지마다 팝업을 표시합니다. 앱 아이콘의 읽지 않은 개수는 어느 쪽이든 유"
+"지됩니다."
 
 #: src/gtk/settings_view.cpp
 msgid ""

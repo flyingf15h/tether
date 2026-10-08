@@ -1834,13 +1834,12 @@ msgid "Hang up"
 msgstr "終了"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "You're on a call on your iPhone"
-msgstr "iPhone から発信します。"
+msgstr "iPhoneで通話中です"
 
 #: src/gtk/calls_view.cpp
 msgid "On a call with <b>{}</b> on your iPhone"
-msgstr ""
+msgstr "iPhoneで <b>{}</b> と通話中"
 
 #: src/gtk/calls_view.cpp
 msgid "No calls."
@@ -1886,19 +1885,19 @@ msgstr ""
 
 #: src/gtk/calls_view.cpp
 msgid "On a FaceTime or app call?"
-msgstr ""
+msgstr "FaceTimeやアプリで通話中ですか？"
 
 #: src/gtk/calls_view.cpp
 msgid "The phone does not announce those, but its audio can still come here."
-msgstr ""
+msgstr "電話はそれらを通知しませんが、音声をここに送ることはできます。"
 
 #: src/gtk/calls_view.cpp
 msgid "Bring phone audio to laptop"
-msgstr ""
+msgstr "電話の音声をノートPCに切り替え"
 
 #: src/gtk/calls_view.cpp
 msgid "Delete"
-msgstr ""
+msgstr "削除"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
@@ -1925,20 +1924,19 @@ msgstr "{} にメッセージ"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pinned"
-msgstr ""
+msgstr "ピン留め"
 
 #: src/gtk/contacts_view.cpp
-#, fuzzy
 msgid "All contacts"
-msgstr "連絡先"
+msgstr "すべての連絡先"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Unpin"
-msgstr ""
+msgstr "ピン留めを解除"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pin"
-msgstr ""
+msgstr "ピン留め"
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2579,33 +2577,29 @@ msgid "Sent"
 msgstr "送信済み"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "That message is older than what is loaded for this conversation."
-msgstr "そのメッセージは会話履歴にもうありません。"
+msgstr "このメッセージは、この会話で読み込まれている範囲より古いものです。"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "No messages match"
-msgstr "%s にメッセージはありません\n"
+msgstr "一致するメッセージはありません"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} message"
 msgid_plural "{} messages"
-msgstr[0] "未読メッセージ {} 件"
+msgstr[0] "メッセージ {} 件"
 
 #: src/gtk/messages_view.cpp
 msgid "You"
-msgstr ""
+msgstr "自分"
 
 #: src/gtk/messages_view.cpp
 msgid "No matches"
-msgstr ""
+msgstr "一致なし"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} of {}"
-msgstr "({1} 件中 {0} 件)"
+msgstr "{1} 件中 {0} 件目"
 
 #: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
@@ -2649,9 +2643,8 @@ msgid "Pasted image"
 msgstr "貼り付けた画像"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} is larger than the 200 MB upload limit."
-msgstr "{} は catbox.moe の上限 200 MB を超えています。"
+msgstr "{} はアップロード上限の 200 MB を超えています。"
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
@@ -2662,6 +2655,8 @@ msgid ""
 "The copied image was empty. Take the screenshot again, or save it and attach "
 "the file."
 msgstr ""
+"コピーした画像が空でした。スクリーンショットを撮り直すか、保存してファイルを"
+"添付してください。"
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2709,22 +2704,20 @@ msgid "Phone number or email"
 msgstr "電話番号またはメールアドレス"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search this conversation (Ctrl+F)"
-msgstr "会話を検索"
+msgstr "この会話を検索 (Ctrl+F)"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search messages"
-msgstr "会話を検索"
+msgstr "メッセージを検索"
 
 #: src/gtk/messages_view.cpp
 msgid "Older match"
-msgstr ""
+msgstr "前の一致"
 
 #: src/gtk/messages_view.cpp
 msgid "Newer match"
-msgstr ""
+msgstr "次の一致"
 
 #: src/gtk/messages_view.cpp
 msgid "Cancel reply"
@@ -2735,9 +2728,8 @@ msgid "Attach images or files"
 msgstr "画像やファイルを添付"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Send a GIF"
-msgstr "ファイルを送信"
+msgstr "GIFを送信"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2752,13 +2744,12 @@ msgid "Retry"
 msgstr "再試行"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid ""
 "Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
 "sent as a link: anyone with the link can open the file."
 msgstr ""
-"catbox.moe のリンクとして送信されます。リンクを知っている人は誰でもファイルを"
-"開けます。"
+"公開ホスト (catbox.moe、ブロックされている場合は 0x0.st) にアップロードされ、"
+"リンクとして送信されます。リンクを知っている人は誰でもファイルを開けます。"
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"
@@ -2796,14 +2787,15 @@ msgstr ""
 "ます。"
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Message notifications"
-msgstr "メッセージ、通知"
+msgstr "メッセージの通知"
 
 #: src/gtk/notifications_view.cpp
 msgid ""
 "A popup for each new text. The unread count on the app icon stays either way."
 msgstr ""
+"新しいメッセージごとにポップアップを表示します。アプリアイコンの未読数はどち"
+"らの場合も表示されます。"
 
 #: src/gtk/settings_view.cpp
 msgid ""

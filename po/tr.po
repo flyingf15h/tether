@@ -1838,13 +1838,12 @@ msgid "Hang up"
 msgstr "Kapat"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "You're on a call on your iPhone"
-msgstr "iPhone üzerinden çağrı başlat."
+msgstr "iPhone’unuzda bir aramadasınız"
 
 #: src/gtk/calls_view.cpp
 msgid "On a call with <b>{}</b> on your iPhone"
-msgstr ""
+msgstr "iPhone’unuzda <b>{}</b> ile görüşmedesiniz"
 
 #: src/gtk/calls_view.cpp
 msgid "No calls."
@@ -1888,19 +1887,19 @@ msgstr "iPhone’da yanıtlananlar dahil her arama bu bilgisayarda çalar."
 
 #: src/gtk/calls_view.cpp
 msgid "On a FaceTime or app call?"
-msgstr ""
+msgstr "FaceTime veya uygulama araması mı?"
 
 #: src/gtk/calls_view.cpp
 msgid "The phone does not announce those, but its audio can still come here."
-msgstr ""
+msgstr "Telefon bunları bildirmez, ancak sesleri yine de buraya gelebilir."
 
 #: src/gtk/calls_view.cpp
 msgid "Bring phone audio to laptop"
-msgstr ""
+msgstr "Telefon sesini dizüstüne al"
 
 #: src/gtk/calls_view.cpp
 msgid "Delete"
-msgstr ""
+msgstr "Sil"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
@@ -1927,20 +1926,19 @@ msgstr "{} adresine mesaj gönder"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pinned"
-msgstr ""
+msgstr "Sabitlenmiş"
 
 #: src/gtk/contacts_view.cpp
-#, fuzzy
 msgid "All contacts"
-msgstr "Kişiler"
+msgstr "Tüm kişiler"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Unpin"
-msgstr ""
+msgstr "Sabitlemeyi kaldır"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pin"
-msgstr ""
+msgstr "Sabitle"
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2582,34 +2580,30 @@ msgid "Sent"
 msgstr "Gönderildi"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "That message is older than what is loaded for this conversation."
-msgstr "O mesaj artık konuşma geçmişinde yok."
+msgstr "Bu mesaj, bu konuşma için yüklenenlerden daha eski."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "No messages match"
-msgstr "%s içinde mesaj yok\n"
+msgstr "Eşleşen mesaj yok"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} message"
 msgid_plural "{} messages"
-msgstr[0] "{} okunmamış mesaj"
-msgstr[1] "{} okunmamış mesaj"
+msgstr[0] "{} mesaj"
+msgstr[1] "{} mesaj"
 
 #: src/gtk/messages_view.cpp
 msgid "You"
-msgstr ""
+msgstr "Siz"
 
 #: src/gtk/messages_view.cpp
 msgid "No matches"
-msgstr ""
+msgstr "Eşleşme yok"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} of {}"
-msgstr "({1} içinden {0})"
+msgstr "{1} içinde {0}"
 
 #: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
@@ -2652,9 +2646,8 @@ msgid "Pasted image"
 msgstr "Yapıştırılan görsel"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} is larger than the 200 MB upload limit."
-msgstr "{}, catbox.moe’nun 200 MB sınırından büyük."
+msgstr "{}, 200 MB yükleme sınırından büyük."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
@@ -2665,6 +2658,8 @@ msgid ""
 "The copied image was empty. Take the screenshot again, or save it and attach "
 "the file."
 msgstr ""
+"Kopyalanan görüntü boştu. Ekran görüntüsünü yeniden alın ya da kaydedip "
+"dosyayı ekleyin."
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2711,22 +2706,20 @@ msgid "Phone number or email"
 msgstr "Telefon numarası ya da e-posta"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search this conversation (Ctrl+F)"
-msgstr "Konuşmalarda ara"
+msgstr "Bu konuşmada ara (Ctrl+F)"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search messages"
-msgstr "Konuşmalarda ara"
+msgstr "Mesajlarda ara"
 
 #: src/gtk/messages_view.cpp
 msgid "Older match"
-msgstr ""
+msgstr "Daha eski eşleşme"
 
 #: src/gtk/messages_view.cpp
 msgid "Newer match"
-msgstr ""
+msgstr "Daha yeni eşleşme"
 
 #: src/gtk/messages_view.cpp
 msgid "Cancel reply"
@@ -2737,9 +2730,8 @@ msgid "Attach images or files"
 msgstr "Görsel veya dosya ekle"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Send a GIF"
-msgstr "Dosya gönder"
+msgstr "GIF gönder"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2754,13 +2746,12 @@ msgid "Retry"
 msgstr "Yeniden dene"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid ""
 "Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
 "sent as a link: anyone with the link can open the file."
 msgstr ""
-"catbox.moe bağlantısı olarak gönderilir: bağlantıya sahip herkes dosyayı "
-"açabilir."
+"Herkese açık bir sunucuya (catbox.moe veya o engelliyse 0x0.st) yüklenir ve "
+"bağlantı olarak gönderilir: bağlantıya sahip olan herkes dosyayı açabilir."
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"
@@ -2798,14 +2789,15 @@ msgstr ""
 "Aramalar yine çalar."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Message notifications"
-msgstr "mesajlar, bildirimler"
+msgstr "Mesaj bildirimleri"
 
 #: src/gtk/notifications_view.cpp
 msgid ""
 "A popup for each new text. The unread count on the app icon stays either way."
 msgstr ""
+"Her yeni mesaj için bir açılır pencere. Uygulama simgesindeki okunmamış "
+"sayısı her durumda kalır."
 
 #: src/gtk/settings_view.cpp
 msgid ""

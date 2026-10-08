@@ -1839,13 +1839,12 @@ msgid "Hang up"
 msgstr "Zavěsit"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "You're on a call on your iPhone"
-msgstr "Zavolat z iPhonu."
+msgstr "Máte hovor na iPhonu"
 
 #: src/gtk/calls_view.cpp
 msgid "On a call with <b>{}</b> on your iPhone"
-msgstr ""
+msgstr "Hovor s <b>{}</b> na iPhonu"
 
 #: src/gtk/calls_view.cpp
 msgid "No calls."
@@ -1891,19 +1890,19 @@ msgstr "Každý hovor hraje na tomto počítači, i ten přijatý na iPhonu."
 
 #: src/gtk/calls_view.cpp
 msgid "On a FaceTime or app call?"
-msgstr ""
+msgstr "Máte hovor přes FaceTime nebo aplikaci?"
 
 #: src/gtk/calls_view.cpp
 msgid "The phone does not announce those, but its audio can still come here."
-msgstr ""
+msgstr "Telefon je neohlašuje, ale jejich zvuk sem přesto může přijít."
 
 #: src/gtk/calls_view.cpp
 msgid "Bring phone audio to laptop"
-msgstr ""
+msgstr "Přenést zvuk telefonu na notebook"
 
 #: src/gtk/calls_view.cpp
 msgid "Delete"
-msgstr ""
+msgstr "Smazat"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
@@ -1930,20 +1929,19 @@ msgstr "Napsat zprávu {}"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pinned"
-msgstr ""
+msgstr "Připnuté"
 
 #: src/gtk/contacts_view.cpp
-#, fuzzy
 msgid "All contacts"
-msgstr "Kontakty"
+msgstr "Všechny kontakty"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Unpin"
-msgstr ""
+msgstr "Odepnout"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pin"
-msgstr ""
+msgstr "Připnout"
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2588,35 +2586,31 @@ msgid "Sent"
 msgstr "Odesláno"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "That message is older than what is loaded for this conversation."
-msgstr "Tato zpráva už není v historii konverzace."
+msgstr "Tato zpráva je starší než to, co je pro tuto konverzaci načteno."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "No messages match"
-msgstr "Žádné zprávy v %s\n"
+msgstr "Žádné zprávy neodpovídají"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} message"
 msgid_plural "{} messages"
-msgstr[0] "{} nepřečtená zpráva"
-msgstr[1] "{} nepřečtené zprávy"
-msgstr[2] "{} nepřečtených zpráv"
+msgstr[0] "{} zpráva"
+msgstr[1] "{} zprávy"
+msgstr[2] "{} zpráv"
 
 #: src/gtk/messages_view.cpp
 msgid "You"
-msgstr ""
+msgstr "Vy"
 
 #: src/gtk/messages_view.cpp
 msgid "No matches"
-msgstr ""
+msgstr "Žádné shody"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} of {}"
-msgstr "({0} z {1})"
+msgstr "{} z {}"
 
 #: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
@@ -2659,9 +2653,8 @@ msgid "Pasted image"
 msgstr "Vložený obrázek"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} is larger than the 200 MB upload limit."
-msgstr "{} je větší než limit 200 MB služby catbox.moe."
+msgstr "{} je větší než limit pro nahrání 200 MB."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
@@ -2672,6 +2665,8 @@ msgid ""
 "The copied image was empty. Take the screenshot again, or save it and attach "
 "the file."
 msgstr ""
+"Zkopírovaný obrázek byl prázdný. Pořiďte snímek obrazovky znovu, nebo jej "
+"uložte a připojte soubor."
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2718,22 +2713,20 @@ msgid "Phone number or email"
 msgstr "Telefonní číslo nebo e-mail"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search this conversation (Ctrl+F)"
-msgstr "Hledat konverzace"
+msgstr "Hledat v této konverzaci (Ctrl+F)"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search messages"
-msgstr "Hledat konverzace"
+msgstr "Hledat zprávy"
 
 #: src/gtk/messages_view.cpp
 msgid "Older match"
-msgstr ""
+msgstr "Starší shoda"
 
 #: src/gtk/messages_view.cpp
 msgid "Newer match"
-msgstr ""
+msgstr "Novější shoda"
 
 #: src/gtk/messages_view.cpp
 msgid "Cancel reply"
@@ -2744,9 +2737,8 @@ msgid "Attach images or files"
 msgstr "Připojit obrázky nebo soubory"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Send a GIF"
-msgstr "Odeslat soubor"
+msgstr "Poslat GIF"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2761,12 +2753,12 @@ msgid "Retry"
 msgstr "Zkusit znovu"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid ""
 "Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
 "sent as a link: anyone with the link can open the file."
 msgstr ""
-"Odesílá se jako odkaz catbox.moe: soubor může otevřít kdokoli s odkazem."
+"Nahraje se na veřejný hosting (catbox.moe, nebo 0x0.st, pokud je "
+"zablokovaný) a odešle se jako odkaz: soubor může otevřít kdokoli s odkazem."
 
 #: src/gtk/notifications_view.cpp
 msgid "Dismiss on the iPhone"
@@ -2803,14 +2795,15 @@ msgstr ""
 "Žádná vyskakovací okna pro zprávy ani aplikace iPhonu. Hovory stále vyzvání."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Message notifications"
-msgstr "zprávy, oznámení"
+msgstr "Oznámení o zprávách"
 
 #: src/gtk/notifications_view.cpp
 msgid ""
 "A popup for each new text. The unread count on the app icon stays either way."
 msgstr ""
+"Vyskakovací okno pro každou novou zprávu. Počet nepřečtených na ikoně "
+"aplikace zůstává v obou případech."
 
 #: src/gtk/settings_view.cpp
 msgid ""

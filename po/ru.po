@@ -1856,13 +1856,12 @@ msgid "Hang up"
 msgstr "Завершить"
 
 #: src/gtk/calls_view.cpp
-#, fuzzy
 msgid "You're on a call on your iPhone"
-msgstr "Совершить вызов с iPhone."
+msgstr "Вы разговариваете по iPhone"
 
 #: src/gtk/calls_view.cpp
 msgid "On a call with <b>{}</b> on your iPhone"
-msgstr ""
+msgstr "Разговор с <b>{}</b> на iPhone"
 
 #: src/gtk/calls_view.cpp
 msgid "No calls."
@@ -1908,19 +1907,21 @@ msgstr "Все звонки звучат на этом компьютере, д�
 
 #: src/gtk/calls_view.cpp
 msgid "On a FaceTime or app call?"
-msgstr ""
+msgstr "Звонок по FaceTime или в приложении?"
 
 #: src/gtk/calls_view.cpp
 msgid "The phone does not announce those, but its audio can still come here."
 msgstr ""
+"Телефон не сообщает о таких звонках, но их звук всё равно можно перенести "
+"сюда."
 
 #: src/gtk/calls_view.cpp
 msgid "Bring phone audio to laptop"
-msgstr ""
+msgstr "Перенести звук телефона на ноутбук"
 
 #: src/gtk/calls_view.cpp
 msgid "Delete"
-msgstr ""
+msgstr "Стереть"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
@@ -1947,20 +1948,19 @@ msgstr "Написать {}"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pinned"
-msgstr ""
+msgstr "Закреплённые"
 
 #: src/gtk/contacts_view.cpp
-#, fuzzy
 msgid "All contacts"
-msgstr "Контакты"
+msgstr "Все контакты"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Unpin"
-msgstr ""
+msgstr "Открепить"
 
 #: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Pin"
-msgstr ""
+msgstr "Закрепить"
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2610,35 +2610,31 @@ msgid "Sent"
 msgstr "Отправлено"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "That message is older than what is loaded for this conversation."
-msgstr "Этого сообщения больше нет в истории переписки."
+msgstr "Это сообщение старше, чем загруженная часть переписки."
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "No messages match"
-msgstr "Нет сообщений в %s\n"
+msgstr "Нет подходящих сообщений"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} message"
 msgid_plural "{} messages"
-msgstr[0] "{} непрочитанное сообщение"
-msgstr[1] "{} непрочитанных сообщения"
-msgstr[2] "{} непрочитанных сообщений"
+msgstr[0] "{} сообщение"
+msgstr[1] "{} сообщения"
+msgstr[2] "{} сообщений"
 
 #: src/gtk/messages_view.cpp
 msgid "You"
-msgstr ""
+msgstr "Вы"
 
 #: src/gtk/messages_view.cpp
 msgid "No matches"
-msgstr ""
+msgstr "Нет совпадений"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} of {}"
-msgstr "({0} из {1})"
+msgstr "{} из {}"
 
 #: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
@@ -2681,9 +2677,8 @@ msgid "Pasted image"
 msgstr "Вставленное изображение"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "{} is larger than the 200 MB upload limit."
-msgstr "{} больше лимита catbox.moe в 200 МБ."
+msgstr "{} превышает лимит загрузки в 200 МБ."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
@@ -2694,6 +2689,8 @@ msgid ""
 "The copied image was empty. Take the screenshot again, or save it and attach "
 "the file."
 msgstr ""
+"Скопированное изображение пустое. Сделайте снимок экрана ещё раз или "
+"сохраните его и прикрепите файл."
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2740,22 +2737,20 @@ msgid "Phone number or email"
 msgstr "Номер телефона или эл. почта"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search this conversation (Ctrl+F)"
-msgstr "Поиск переписок"
+msgstr "Поиск в этой переписке (Ctrl+F)"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Search messages"
-msgstr "Поиск переписок"
+msgstr "Поиск сообщений"
 
 #: src/gtk/messages_view.cpp
 msgid "Older match"
-msgstr ""
+msgstr "Предыдущее совпадение"
 
 #: src/gtk/messages_view.cpp
 msgid "Newer match"
-msgstr ""
+msgstr "Следующее совпадение"
 
 #: src/gtk/messages_view.cpp
 msgid "Cancel reply"
@@ -2766,9 +2761,8 @@ msgid "Attach images or files"
 msgstr "Прикрепить изображения или файлы"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid "Send a GIF"
-msgstr "Отправить файл"
+msgstr "Отправить GIF"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2783,12 +2777,12 @@ msgid "Retry"
 msgstr "Повторить"
 
 #: src/gtk/messages_view.cpp
-#, fuzzy
 msgid ""
 "Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
 "sent as a link: anyone with the link can open the file."
 msgstr ""
-"Отправляется ссылкой catbox.moe: файл может открыть любой, у кого есть "
+"Загружается на публичный хостинг (catbox.moe или 0x0.st, если тот "
+"заблокирован) и отправляется ссылкой: открыть файл может любой, у кого есть "
 "ссылка."
 
 #: src/gtk/notifications_view.cpp
@@ -2827,14 +2821,15 @@ msgstr ""
 "прежнему будут звучать."
 
 #: src/gtk/notifications_view.cpp
-#, fuzzy
 msgid "Message notifications"
-msgstr "сообщения, уведомления"
+msgstr "Уведомления о сообщениях"
 
 #: src/gtk/notifications_view.cpp
 msgid ""
 "A popup for each new text. The unread count on the app icon stays either way."
 msgstr ""
+"Всплывающее окно для каждого нового сообщения. Счётчик непрочитанных на "
+"значке приложения остаётся в любом случае."
 
 #: src/gtk/settings_view.cpp
 msgid ""
