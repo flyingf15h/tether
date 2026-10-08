@@ -129,7 +129,7 @@ namespace tether::bluetooth {
         // Calls already brought here once, and calls the user chose to keep on the phone.
         std::set<std::string> pulled_;
         std::set<std::string> on_phone_;
-        // Gateway path plus preference last applied between calls.
+        // Gateway path plus the RejectSCO gate state last applied (#shut or #open).
         std::string idle_gateway_;
         // Set while a desktop-handled call holds RejectSCO off; seen_call once
         // that call has shown up, so a dial still being set up is not released.

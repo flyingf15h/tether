@@ -358,18 +358,28 @@ namespace tether::bluetooth {
                 std::system("pactl set-source-mute tether_call_mic 0 >/dev/null 2>&1; "
                             "pactl set-source-mute @DEFAULT_SOURCE@ 0 >/dev/null 2>&1");
             }
-            // Between calls the gate follows the preference: open lets the phone
-            // bring the next call straight here, shut keeps it on the earpiece.
+            // Between calls the gate stays shut whatever the preference: while it is
+            // open, iOS treats this computer as a headset and plays Siri, media and
+            // other sounds here. A call opens it again below.
             // PipeWire resets it for a new gateway, so that counts as unapplied.
-            const std::string applied = snap.gateway.path + (laptop ? "#here" : "#phone");
+            const std::string applied = snap.gateway.path + "#shut";
             if (ended || idle_gateway_ != applied) {
-                if (set_reject_sco(*source, snap, !laptop))
+                if (set_reject_sco(*source, snap, true))
                     idle_gateway_ = applied;
             }
             return;
         }
 
         claimed_call_seen_ = true;
+        // With laptop as the default, open the gate as soon as a call shows up, so
+        // answering it on the phone brings the voice link straight here.
+        if (laptop && std::any_of(snap.calls.begin(), snap.calls.end(), [&](const Call& c) {
+                return !on_phone_.count(c.path);
+            })) {
+            const std::string applied = snap.gateway.path + "#open";
+            if (idle_gateway_ != applied && set_reject_sco(*source, snap, false))
+                idle_gateway_ = applied;
+        }
         // Each call is pulled here once, when it can carry audio. Once it has been
         // here, moving it to the phone from the phone is respected.
         const bool here = snap.audio_state == "active";
@@ -419,6 +429,7 @@ namespace tether::bluetooth {
                 // Picked "on iPhone": this call stays there even with laptop as the default.
                 std::lock_guard<std::mutex> lock(audio_mutex_);
                 on_phone_.insert(target);
+                idle_gateway_.clear();
                 if (calls_on_laptop())
                     set_reject_sco(*source, snap, true);
             }
