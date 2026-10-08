@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 15:22-0400\n"
+"POT-Creation-Date: 2026-10-08 12:37-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Swedish\n"
@@ -1486,7 +1486,8 @@ msgstr ""
 
 #. TRANSLATORS: the feature name Tether shows for this profile.
 #: src/core/src/bluetooth/profile_supervisor.cpp src/daemon/main.cpp
-#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/settings_view.cpp
+#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/messages_view.cpp
+#: src/gtk/settings_view.cpp
 msgid "Messages"
 msgstr "Meddelanden"
 
@@ -1840,6 +1841,15 @@ msgid "Hang up"
 msgstr "Lägg på"
 
 #: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "You're on a call on your iPhone"
+msgstr "Ring ett samtal från iPhone."
+
+#: src/gtk/calls_view.cpp
+msgid "On a call with <b>{}</b> on your iPhone"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
 msgid "No calls."
 msgstr "Inga samtal."
 
@@ -1880,7 +1890,23 @@ msgid "Every call plays on this computer, even ones answered on the iPhone."
 msgstr ""
 "Alla samtal spelas upp på den här datorn, även de som besvaras på iPhone."
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/calls_view.cpp
+msgid "On a FaceTime or app call?"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "The phone does not announce those, but its audio can still come here."
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Bring phone audio to laptop"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Delete"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
 msgstr "Kopiera"
 
@@ -1889,7 +1915,7 @@ msgstr "Kopiera"
 msgid "Copy {}"
 msgstr "Kopiera {}"
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copied to the clipboard."
 msgstr "Kopierat till urklipp."
 
@@ -1902,6 +1928,23 @@ msgstr "Skicka meddelande"
 #: src/gtk/contacts_view.cpp
 msgid "Message {}"
 msgstr "Skicka meddelande till {}"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pinned"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp
+#, fuzzy
+msgid "All contacts"
+msgstr "Kontakter"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Unpin"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pin"
+msgstr ""
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2518,10 +2561,6 @@ msgstr[0] "{} oläst meddelande"
 msgstr[1] "{} olästa meddelanden"
 
 #: src/gtk/messages_view.cpp
-msgid "Sending…"
-msgstr "Skickar…"
-
-#: src/gtk/messages_view.cpp
 msgid "{} reply"
 msgid_plural "{} replies"
 msgstr[0] "{} svar"
@@ -2550,6 +2589,36 @@ msgid "Sent"
 msgstr "Skickat"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "That message is older than what is loaded for this conversation."
+msgstr "Det meddelandet finns inte längre i konversationshistoriken."
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "No messages match"
+msgstr "Inga meddelanden i %s\n"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} message"
+msgid_plural "{} messages"
+msgstr[0] "{} oläst meddelande"
+msgstr[1] "{} olästa meddelanden"
+
+#: src/gtk/messages_view.cpp
+msgid "You"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "No matches"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} of {}"
+msgstr "({0} av {1})"
+
+#: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
 msgstr "En Bluetooth-anslutning krävs för att synkronisera meddelanden."
 
@@ -2560,6 +2629,10 @@ msgstr "Välj en konversation"
 #: src/gtk/messages_view.cpp
 msgid "Uploading…"
 msgstr "Laddar upp…"
+
+#: src/gtk/messages_view.cpp
+msgid "Sending…"
+msgstr "Skickar…"
 
 #: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
@@ -2586,12 +2659,19 @@ msgid "Pasted image"
 msgstr "Inklistrad bild"
 
 #: src/gtk/messages_view.cpp
-msgid "{} is larger than catbox.moe's 200 MB limit."
+#, fuzzy
+msgid "{} is larger than the 200 MB upload limit."
 msgstr "{} är större än catbox.moes gräns på 200 MB."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
 msgstr "Kunde inte spara den inklistrade bilden."
+
+#: src/gtk/messages_view.cpp
+msgid ""
+"The copied image was empty. Take the screenshot again, or save it and attach "
+"the file."
+msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2618,14 +2698,6 @@ msgid "Could not reach the Tether daemon; the message was not sent."
 msgstr "Kunde inte nå Tether-demonen; meddelandet skickades inte."
 
 #: src/gtk/messages_view.cpp
-msgid "Reaction sent"
-msgstr "Reaktion skickad"
-
-#: src/gtk/messages_view.cpp
-msgid "The reaction was not sent."
-msgstr "Reaktionen skickades inte."
-
-#: src/gtk/messages_view.cpp
 msgid "Message @{}"
 msgstr "Meddelande till @{}"
 
@@ -2646,12 +2718,35 @@ msgid "Phone number or email"
 msgstr "Telefonnummer eller e-post"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search this conversation (Ctrl+F)"
+msgstr "Sök konversationer"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search messages"
+msgstr "Sök konversationer"
+
+#: src/gtk/messages_view.cpp
+msgid "Older match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Newer match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
 msgid "Cancel reply"
 msgstr "Avbryt svar"
 
 #: src/gtk/messages_view.cpp
 msgid "Attach images or files"
 msgstr "Bifoga bilder eller filer"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Send a GIF"
+msgstr "Skicka fil"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2666,7 +2761,10 @@ msgid "Retry"
 msgstr "Försök igen"
 
 #: src/gtk/messages_view.cpp
-msgid "Sent as catbox.moe links: anyone with a link can open the file."
+#, fuzzy
+msgid ""
+"Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
+"sent as a link: anyone with the link can open the file."
 msgstr "Skickas som catbox.moe-länk: alla som har länken kan öppna filen."
 
 #: src/gtk/notifications_view.cpp
@@ -2703,6 +2801,16 @@ msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
 "Inga popup-fönster för meddelanden eller iPhone-appar. Samtal ringer "
 "fortfarande."
+
+#: src/gtk/notifications_view.cpp
+#, fuzzy
+msgid "Message notifications"
+msgstr "meddelanden, aviseringar"
+
+#: src/gtk/notifications_view.cpp
+msgid ""
+"A popup for each new text. The unread count on the app icon stays either way."
+msgstr ""
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2896,6 +3004,12 @@ msgstr "Parkoppla enheter och synkronisera urklipp över nätverket"
 #: src/gtk/tether-gtk.desktop.in
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr "iPhone;iOS;SMS;Meddelanden;Urklipp;Filer;Notiser;Samtal;AirPods;"
+
+#~ msgid "Reaction sent"
+#~ msgstr "Reaktion skickad"
+
+#~ msgid "The reaction was not sent."
+#~ msgstr "Reaktionen skickades inte."
 
 #~ msgid "Audio here"
 #~ msgstr "Ta ljudet hit"

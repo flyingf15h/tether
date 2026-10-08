@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 15:22-0400\n"
+"POT-Creation-Date: 2026-10-08 12:37-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Ukrainian\n"
@@ -1497,7 +1497,8 @@ msgstr ""
 
 #. TRANSLATORS: the feature name Tether shows for this profile.
 #: src/core/src/bluetooth/profile_supervisor.cpp src/daemon/main.cpp
-#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/settings_view.cpp
+#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/messages_view.cpp
+#: src/gtk/settings_view.cpp
 msgid "Messages"
 msgstr "Повідомлення"
 
@@ -1852,6 +1853,15 @@ msgid "Hang up"
 msgstr "Завершити"
 
 #: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "You're on a call on your iPhone"
+msgstr "Здійснити виклик з iPhone."
+
+#: src/gtk/calls_view.cpp
+msgid "On a call with <b>{}</b> on your iPhone"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
 msgid "No calls."
 msgstr "Викликів немає."
 
@@ -1893,7 +1903,23 @@ msgstr "Завжди використовувати ноутбук для дзв
 msgid "Every call plays on this computer, even ones answered on the iPhone."
 msgstr "Усі дзвінки звучать на цьому комп’ютері, навіть прийняті на iPhone."
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/calls_view.cpp
+msgid "On a FaceTime or app call?"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "The phone does not announce those, but its audio can still come here."
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Bring phone audio to laptop"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Delete"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
 msgstr "Копіювати"
 
@@ -1902,7 +1928,7 @@ msgstr "Копіювати"
 msgid "Copy {}"
 msgstr "Копіювати {}"
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copied to the clipboard."
 msgstr "Скопійовано до буфера обміну."
 
@@ -1915,6 +1941,23 @@ msgstr "Написати повідомлення"
 #: src/gtk/contacts_view.cpp
 msgid "Message {}"
 msgstr "Написати {}"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pinned"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp
+#, fuzzy
+msgid "All contacts"
+msgstr "Контакти"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Unpin"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pin"
+msgstr ""
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2534,10 +2577,6 @@ msgstr[1] "{} непрочитані повідомлення"
 msgstr[2] "{} непрочитаних повідомлень"
 
 #: src/gtk/messages_view.cpp
-msgid "Sending…"
-msgstr "Надсилання…"
-
-#: src/gtk/messages_view.cpp
 msgid "{} reply"
 msgid_plural "{} replies"
 msgstr[0] "{} відповідь"
@@ -2567,6 +2606,37 @@ msgid "Sent"
 msgstr "Надіслано"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "That message is older than what is loaded for this conversation."
+msgstr "Цього повідомлення вже немає в історії розмови."
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "No messages match"
+msgstr "Немає повідомлень у %s\n"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} message"
+msgid_plural "{} messages"
+msgstr[0] "{} непрочитане повідомлення"
+msgstr[1] "{} непрочитані повідомлення"
+msgstr[2] "{} непрочитаних повідомлень"
+
+#: src/gtk/messages_view.cpp
+msgid "You"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "No matches"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} of {}"
+msgstr "({0} з {1})"
+
+#: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
 msgstr "Для синхронізації повідомлень потрібне з’єднання Bluetooth."
 
@@ -2577,6 +2647,10 @@ msgstr "Виберіть розмову"
 #: src/gtk/messages_view.cpp
 msgid "Uploading…"
 msgstr "Вивантаження…"
+
+#: src/gtk/messages_view.cpp
+msgid "Sending…"
+msgstr "Надсилання…"
 
 #: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
@@ -2604,12 +2678,19 @@ msgid "Pasted image"
 msgstr "Вставлене зображення"
 
 #: src/gtk/messages_view.cpp
-msgid "{} is larger than catbox.moe's 200 MB limit."
+#, fuzzy
+msgid "{} is larger than the 200 MB upload limit."
 msgstr "{} більший за ліміт catbox.moe у 200 МБ."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
 msgstr "Не вдалося зберегти вставлене зображення."
+
+#: src/gtk/messages_view.cpp
+msgid ""
+"The copied image was empty. Take the screenshot again, or save it and attach "
+"the file."
+msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2636,14 +2717,6 @@ msgid "Could not reach the Tether daemon; the message was not sent."
 msgstr "Не вдалося зв'язатися з демоном Tether; повідомлення не надіслано."
 
 #: src/gtk/messages_view.cpp
-msgid "Reaction sent"
-msgstr "Реакцію надіслано"
-
-#: src/gtk/messages_view.cpp
-msgid "The reaction was not sent."
-msgstr "Реакцію не надіслано."
-
-#: src/gtk/messages_view.cpp
 msgid "Message @{}"
 msgstr "Повідомлення для @{}"
 
@@ -2664,12 +2737,35 @@ msgid "Phone number or email"
 msgstr "Номер телефону або ел. пошта"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search this conversation (Ctrl+F)"
+msgstr "Пошук розмов"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search messages"
+msgstr "Пошук розмов"
+
+#: src/gtk/messages_view.cpp
+msgid "Older match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Newer match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
 msgid "Cancel reply"
 msgstr "Скасувати відповідь"
 
 #: src/gtk/messages_view.cpp
 msgid "Attach images or files"
 msgstr "Прикріпити зображення або файли"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Send a GIF"
+msgstr "Надіслати файл"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2684,7 +2780,10 @@ msgid "Retry"
 msgstr "Повторити"
 
 #: src/gtk/messages_view.cpp
-msgid "Sent as catbox.moe links: anyone with a link can open the file."
+#, fuzzy
+msgid ""
+"Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
+"sent as a link: anyone with the link can open the file."
 msgstr ""
 "Надсилається посиланням catbox.moe: файл може відкрити будь-хто, хто має "
 "посилання."
@@ -2723,6 +2822,16 @@ msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
 "Без спливних вікон для повідомлень і застосунків iPhone. Вхідні дзвінки й "
 "надалі звучатимуть."
+
+#: src/gtk/notifications_view.cpp
+#, fuzzy
+msgid "Message notifications"
+msgstr "повідомлення, сповіщення"
+
+#: src/gtk/notifications_view.cpp
+msgid ""
+"A popup for each new text. The unread count on the app icon stays either way."
+msgstr ""
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2918,6 +3027,12 @@ msgstr "Створюйте пари пристроїв і синхронізуй
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr ""
 "iPhone;iOS;SMS;Повідомлення;Буфер обміну;Файли;Сповіщення;Дзвінки;AirPods;"
+
+#~ msgid "Reaction sent"
+#~ msgstr "Реакцію надіслано"
+
+#~ msgid "The reaction was not sent."
+#~ msgstr "Реакцію не надіслано."
 
 #~ msgid "Audio here"
 #~ msgstr "Перевести звук сюди"

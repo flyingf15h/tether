@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 15:22-0400\n"
+"POT-Creation-Date: 2026-10-08 12:37-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Simplified Chinese\n"
@@ -1422,7 +1422,8 @@ msgstr ""
 
 #. TRANSLATORS: the feature name Tether shows for this profile.
 #: src/core/src/bluetooth/profile_supervisor.cpp src/daemon/main.cpp
-#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/settings_view.cpp
+#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/messages_view.cpp
+#: src/gtk/settings_view.cpp
 msgid "Messages"
 msgstr "信息"
 
@@ -1769,6 +1770,15 @@ msgid "Hang up"
 msgstr "挂断"
 
 #: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "You're on a call on your iPhone"
+msgstr "从 iPhone 拨打电话。"
+
+#: src/gtk/calls_view.cpp
+msgid "On a call with <b>{}</b> on your iPhone"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
 msgid "No calls."
 msgstr "没有通话。"
 
@@ -1808,7 +1818,23 @@ msgstr "始终使用笔记本通话"
 msgid "Every call plays on this computer, even ones answered on the iPhone."
 msgstr "所有通话都在这台电脑上播放，包括在 iPhone 上接听的通话。"
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/calls_view.cpp
+msgid "On a FaceTime or app call?"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "The phone does not announce those, but its audio can still come here."
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Bring phone audio to laptop"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Delete"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
 msgstr "复制"
 
@@ -1817,7 +1843,7 @@ msgstr "复制"
 msgid "Copy {}"
 msgstr "复制 {}"
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copied to the clipboard."
 msgstr "已复制到剪贴板。"
 
@@ -1830,6 +1856,23 @@ msgstr "发送信息"
 #: src/gtk/contacts_view.cpp
 msgid "Message {}"
 msgstr "给 {} 发信息"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pinned"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp
+#, fuzzy
+msgid "All contacts"
+msgstr "通讯录"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Unpin"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pin"
+msgstr ""
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2430,10 +2473,6 @@ msgid_plural "{} unread messages"
 msgstr[0] "{} 条未读信息"
 
 #: src/gtk/messages_view.cpp
-msgid "Sending…"
-msgstr "正在发送……"
-
-#: src/gtk/messages_view.cpp
 msgid "{} reply"
 msgid_plural "{} replies"
 msgstr[0] "{} 条回复"
@@ -2461,6 +2500,35 @@ msgid "Sent"
 msgstr "已发送"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "That message is older than what is loaded for this conversation."
+msgstr "该信息已不在会话记录中。"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "No messages match"
+msgstr "%s 中没有信息\n"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} message"
+msgid_plural "{} messages"
+msgstr[0] "{} 条未读信息"
+
+#: src/gtk/messages_view.cpp
+msgid "You"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "No matches"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} of {}"
+msgstr "（第 {0} 个，共 {1} 个）"
+
+#: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
 msgstr "需要蓝牙连接才能同步消息。"
 
@@ -2471,6 +2539,10 @@ msgstr "选择一个会话"
 #: src/gtk/messages_view.cpp
 msgid "Uploading…"
 msgstr "正在上传…"
+
+#: src/gtk/messages_view.cpp
+msgid "Sending…"
+msgstr "正在发送……"
 
 #: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
@@ -2497,12 +2569,19 @@ msgid "Pasted image"
 msgstr "粘贴的图片"
 
 #: src/gtk/messages_view.cpp
-msgid "{} is larger than catbox.moe's 200 MB limit."
+#, fuzzy
+msgid "{} is larger than the 200 MB upload limit."
 msgstr "{} 超过了 catbox.moe 的 200 MB 上限。"
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
 msgstr "无法保存粘贴的图片。"
+
+#: src/gtk/messages_view.cpp
+msgid ""
+"The copied image was empty. Take the screenshot again, or save it and attach "
+"the file."
+msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2529,14 +2608,6 @@ msgid "Could not reach the Tether daemon; the message was not sent."
 msgstr "无法连接到 Tether 守护进程；信息未发送。"
 
 #: src/gtk/messages_view.cpp
-msgid "Reaction sent"
-msgstr "已发送回应"
-
-#: src/gtk/messages_view.cpp
-msgid "The reaction was not sent."
-msgstr "回应未发送。"
-
-#: src/gtk/messages_view.cpp
 msgid "Message @{}"
 msgstr "发消息给 @{}"
 
@@ -2557,12 +2628,35 @@ msgid "Phone number or email"
 msgstr "电话号码或电子邮件"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search this conversation (Ctrl+F)"
+msgstr "搜索会话"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search messages"
+msgstr "搜索会话"
+
+#: src/gtk/messages_view.cpp
+msgid "Older match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Newer match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
 msgid "Cancel reply"
 msgstr "取消回复"
 
 #: src/gtk/messages_view.cpp
 msgid "Attach images or files"
 msgstr "附加图片或文件"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Send a GIF"
+msgstr "发送文件"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2577,7 +2671,10 @@ msgid "Retry"
 msgstr "重试"
 
 #: src/gtk/messages_view.cpp
-msgid "Sent as catbox.moe links: anyone with a link can open the file."
+#, fuzzy
+msgid ""
+"Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
+"sent as a link: anyone with the link can open the file."
 msgstr "以 catbox.moe 链接发送：任何拿到链接的人都能打开该文件。"
 
 #: src/gtk/notifications_view.cpp
@@ -2612,6 +2709,16 @@ msgstr "静音通知"
 #: src/gtk/notifications_view.cpp
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr "不为信息或 iPhone 应用显示桌面弹窗。来电仍会响铃。"
+
+#: src/gtk/notifications_view.cpp
+#, fuzzy
+msgid "Message notifications"
+msgstr "信息、通知"
+
+#: src/gtk/notifications_view.cpp
+msgid ""
+"A popup for each new text. The unread count on the app icon stays either way."
+msgstr ""
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2795,6 +2902,12 @@ msgstr "配对设备并通过网络同步剪贴板"
 #: src/gtk/tether-gtk.desktop.in
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr "iPhone;iOS;SMS;信息;剪贴板;文件;通知;通话;AirPods;"
+
+#~ msgid "Reaction sent"
+#~ msgstr "已发送回应"
+
+#~ msgid "The reaction was not sent."
+#~ msgstr "回应未发送。"
 
 #~ msgid "Audio here"
 #~ msgstr "将音频转到本机"

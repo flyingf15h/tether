@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 15:22-0400\n"
+"POT-Creation-Date: 2026-10-08 12:37-0400\n"
 "PO-Revision-Date: 2026-08-23\n"
 "Last-Translator: Tether project\n"
 "Language-Team: Czech\n"
@@ -1485,7 +1485,8 @@ msgstr ""
 
 #. TRANSLATORS: the feature name Tether shows for this profile.
 #: src/core/src/bluetooth/profile_supervisor.cpp src/daemon/main.cpp
-#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/settings_view.cpp
+#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/messages_view.cpp
+#: src/gtk/settings_view.cpp
 msgid "Messages"
 msgstr "Zprávy"
 
@@ -1838,6 +1839,15 @@ msgid "Hang up"
 msgstr "Zavěsit"
 
 #: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "You're on a call on your iPhone"
+msgstr "Zavolat z iPhonu."
+
+#: src/gtk/calls_view.cpp
+msgid "On a call with <b>{}</b> on your iPhone"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
 msgid "No calls."
 msgstr "Žádné hovory."
 
@@ -1879,7 +1889,23 @@ msgstr "Vždy používat notebook pro hovory"
 msgid "Every call plays on this computer, even ones answered on the iPhone."
 msgstr "Každý hovor hraje na tomto počítači, i ten přijatý na iPhonu."
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/calls_view.cpp
+msgid "On a FaceTime or app call?"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "The phone does not announce those, but its audio can still come here."
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Bring phone audio to laptop"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Delete"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
 msgstr "Kopírovat"
 
@@ -1888,7 +1914,7 @@ msgstr "Kopírovat"
 msgid "Copy {}"
 msgstr "Kopírovat {}"
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copied to the clipboard."
 msgstr "Zkopírováno do schránky."
 
@@ -1901,6 +1927,23 @@ msgstr "Napsat zprávu"
 #: src/gtk/contacts_view.cpp
 msgid "Message {}"
 msgstr "Napsat zprávu {}"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pinned"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp
+#, fuzzy
+msgid "All contacts"
+msgstr "Kontakty"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Unpin"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pin"
+msgstr ""
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2516,10 +2559,6 @@ msgstr[1] "{} nepřečtené zprávy"
 msgstr[2] "{} nepřečtených zpráv"
 
 #: src/gtk/messages_view.cpp
-msgid "Sending…"
-msgstr "Odesílání…"
-
-#: src/gtk/messages_view.cpp
 msgid "{} reply"
 msgid_plural "{} replies"
 msgstr[0] "{} odpověď"
@@ -2549,6 +2588,37 @@ msgid "Sent"
 msgstr "Odesláno"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "That message is older than what is loaded for this conversation."
+msgstr "Tato zpráva už není v historii konverzace."
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "No messages match"
+msgstr "Žádné zprávy v %s\n"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} message"
+msgid_plural "{} messages"
+msgstr[0] "{} nepřečtená zpráva"
+msgstr[1] "{} nepřečtené zprávy"
+msgstr[2] "{} nepřečtených zpráv"
+
+#: src/gtk/messages_view.cpp
+msgid "You"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "No matches"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} of {}"
+msgstr "({0} z {1})"
+
+#: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
 msgstr "Pro synchronizaci zpráv je potřeba připojení Bluetooth."
 
@@ -2559,6 +2629,10 @@ msgstr "Vyberte konverzaci"
 #: src/gtk/messages_view.cpp
 msgid "Uploading…"
 msgstr "Nahrávání…"
+
+#: src/gtk/messages_view.cpp
+msgid "Sending…"
+msgstr "Odesílání…"
 
 #: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
@@ -2585,12 +2659,19 @@ msgid "Pasted image"
 msgstr "Vložený obrázek"
 
 #: src/gtk/messages_view.cpp
-msgid "{} is larger than catbox.moe's 200 MB limit."
+#, fuzzy
+msgid "{} is larger than the 200 MB upload limit."
 msgstr "{} je větší než limit 200 MB služby catbox.moe."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
 msgstr "Vložený obrázek se nepodařilo uložit."
+
+#: src/gtk/messages_view.cpp
+msgid ""
+"The copied image was empty. Take the screenshot again, or save it and attach "
+"the file."
+msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2617,14 +2698,6 @@ msgid "Could not reach the Tether daemon; the message was not sent."
 msgstr "Nepodařilo se spojit s démonem Tether; zpráva nebyla odeslána."
 
 #: src/gtk/messages_view.cpp
-msgid "Reaction sent"
-msgstr "Reakce odeslána"
-
-#: src/gtk/messages_view.cpp
-msgid "The reaction was not sent."
-msgstr "Reakce nebyla odeslána."
-
-#: src/gtk/messages_view.cpp
 msgid "Message @{}"
 msgstr "Zpráva pro @{}"
 
@@ -2645,12 +2718,35 @@ msgid "Phone number or email"
 msgstr "Telefonní číslo nebo e-mail"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search this conversation (Ctrl+F)"
+msgstr "Hledat konverzace"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search messages"
+msgstr "Hledat konverzace"
+
+#: src/gtk/messages_view.cpp
+msgid "Older match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Newer match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
 msgid "Cancel reply"
 msgstr "Zrušit odpověď"
 
 #: src/gtk/messages_view.cpp
 msgid "Attach images or files"
 msgstr "Připojit obrázky nebo soubory"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Send a GIF"
+msgstr "Odeslat soubor"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2665,7 +2761,10 @@ msgid "Retry"
 msgstr "Zkusit znovu"
 
 #: src/gtk/messages_view.cpp
-msgid "Sent as catbox.moe links: anyone with a link can open the file."
+#, fuzzy
+msgid ""
+"Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
+"sent as a link: anyone with the link can open the file."
 msgstr ""
 "Odesílá se jako odkaz catbox.moe: soubor může otevřít kdokoli s odkazem."
 
@@ -2702,6 +2801,16 @@ msgstr "Ztlumit oznámení"
 msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
 "Žádná vyskakovací okna pro zprávy ani aplikace iPhonu. Hovory stále vyzvání."
+
+#: src/gtk/notifications_view.cpp
+#, fuzzy
+msgid "Message notifications"
+msgstr "zprávy, oznámení"
+
+#: src/gtk/notifications_view.cpp
+msgid ""
+"A popup for each new text. The unread count on the app icon stays either way."
+msgstr ""
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2891,6 +3000,12 @@ msgstr "Spárujte zařízení a synchronizujte schránku po síti"
 #: src/gtk/tether-gtk.desktop.in
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr "iPhone;iOS;SMS;Zprávy;Schránka;Soubory;Oznámení;Hovory;AirPods;"
+
+#~ msgid "Reaction sent"
+#~ msgstr "Reakce odeslána"
+
+#~ msgid "The reaction was not sent."
+#~ msgstr "Reakce nebyla odeslána."
 
 #~ msgid "Audio here"
 #~ msgstr "Přesunout zvuk sem"

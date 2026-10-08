@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: tether\n"
 "Report-Msgid-Bugs-To: zack@bartel.com\n"
-"POT-Creation-Date: 2026-10-04 15:22-0400\n"
+"POT-Creation-Date: 2026-10-08 12:37-0400\n"
 "PO-Revision-Date: 2026-08-22\n"
 "Last-Translator: Tether project\n"
 "Language-Team: French\n"
@@ -1513,7 +1513,8 @@ msgstr ""
 
 #. TRANSLATORS: the feature name Tether shows for this profile.
 #: src/core/src/bluetooth/profile_supervisor.cpp src/daemon/main.cpp
-#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/settings_view.cpp
+#: src/gtk/devices_view.cpp src/gtk/main.cpp src/gtk/messages_view.cpp
+#: src/gtk/settings_view.cpp
 msgid "Messages"
 msgstr "Messages"
 
@@ -1872,6 +1873,15 @@ msgid "Hang up"
 msgstr "Raccrocher"
 
 #: src/gtk/calls_view.cpp
+#, fuzzy
+msgid "You're on a call on your iPhone"
+msgstr "Passer un appel depuis l'iPhone."
+
+#: src/gtk/calls_view.cpp
+msgid "On a call with <b>{}</b> on your iPhone"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
 msgid "No calls."
 msgstr "Aucun appel."
 
@@ -1914,7 +1924,23 @@ msgid "Every call plays on this computer, even ones answered on the iPhone."
 msgstr ""
 "Tous les appels passent par cet ordinateur, même ceux pris sur l’iPhone."
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/calls_view.cpp
+msgid "On a FaceTime or app call?"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "The phone does not announce those, but its audio can still come here."
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Bring phone audio to laptop"
+msgstr ""
+
+#: src/gtk/calls_view.cpp
+msgid "Delete"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copy"
 msgstr "Copier"
 
@@ -1923,7 +1949,7 @@ msgstr "Copier"
 msgid "Copy {}"
 msgstr "Copier {}"
 
-#: src/gtk/contacts_view.cpp
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
 msgid "Copied to the clipboard."
 msgstr "Copié dans le presse-papiers."
 
@@ -1936,6 +1962,23 @@ msgstr "Envoyer un message"
 #: src/gtk/contacts_view.cpp
 msgid "Message {}"
 msgstr "Envoyer un message à {}"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pinned"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp
+#, fuzzy
+msgid "All contacts"
+msgstr "Contacts"
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Unpin"
+msgstr ""
+
+#: src/gtk/contacts_view.cpp src/gtk/messages_view.cpp
+msgid "Pin"
+msgstr ""
 
 #: src/gtk/contacts_view.cpp
 msgid "No contacts yet. Check the Bluetooth link on the Devices page."
@@ -2558,10 +2601,6 @@ msgstr[0] "{} message non lu"
 msgstr[1] "{} messages non lus"
 
 #: src/gtk/messages_view.cpp
-msgid "Sending…"
-msgstr "Envoi…"
-
-#: src/gtk/messages_view.cpp
 msgid "{} reply"
 msgid_plural "{} replies"
 msgstr[0] "{} réponse"
@@ -2590,6 +2629,36 @@ msgid "Sent"
 msgstr "Envoyé"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "That message is older than what is loaded for this conversation."
+msgstr "Ce message n'est plus dans l'historique de la conversation."
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "No messages match"
+msgstr "Aucun message dans %s\n"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} message"
+msgid_plural "{} messages"
+msgstr[0] "{} message non lu"
+msgstr[1] "{} messages non lus"
+
+#: src/gtk/messages_view.cpp
+msgid "You"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "No matches"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "{} of {}"
+msgstr "({0} sur {1})"
+
+#: src/gtk/messages_view.cpp
 msgid "Bluetooth connection needed to sync messages."
 msgstr "Une connexion Bluetooth est nécessaire pour synchroniser les messages."
 
@@ -2600,6 +2669,10 @@ msgstr "Sélectionnez une conversation"
 #: src/gtk/messages_view.cpp
 msgid "Uploading…"
 msgstr "Envoi en ligne…"
+
+#: src/gtk/messages_view.cpp
+msgid "Sending…"
+msgstr "Envoi…"
 
 #: src/gtk/messages_view.cpp
 msgid "Enter a recipient."
@@ -2627,12 +2700,19 @@ msgid "Pasted image"
 msgstr "Image collée"
 
 #: src/gtk/messages_view.cpp
-msgid "{} is larger than catbox.moe's 200 MB limit."
+#, fuzzy
+msgid "{} is larger than the 200 MB upload limit."
 msgstr "{} dépasse la limite de 200 Mo de catbox.moe."
 
 #: src/gtk/messages_view.cpp
 msgid "Could not save the pasted image."
 msgstr "Impossible d’enregistrer l’image collée."
+
+#: src/gtk/messages_view.cpp
+msgid ""
+"The copied image was empty. Take the screenshot again, or save it and attach "
+"the file."
+msgstr ""
 
 #: src/gtk/messages_view.cpp
 msgid "Choose files to send"
@@ -2659,14 +2739,6 @@ msgid "Could not reach the Tether daemon; the message was not sent."
 msgstr "Impossible de joindre le démon Tether ; le message n'a pas été envoyé."
 
 #: src/gtk/messages_view.cpp
-msgid "Reaction sent"
-msgstr "Réaction envoyée"
-
-#: src/gtk/messages_view.cpp
-msgid "The reaction was not sent."
-msgstr "La réaction n’a pas été envoyée."
-
-#: src/gtk/messages_view.cpp
 msgid "Message @{}"
 msgstr "Message à @{}"
 
@@ -2687,12 +2759,35 @@ msgid "Phone number or email"
 msgstr "Numéro de téléphone ou e-mail"
 
 #: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search this conversation (Ctrl+F)"
+msgstr "Rechercher des conversations"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Search messages"
+msgstr "Rechercher des conversations"
+
+#: src/gtk/messages_view.cpp
+msgid "Older match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
+msgid "Newer match"
+msgstr ""
+
+#: src/gtk/messages_view.cpp
 msgid "Cancel reply"
 msgstr "Annuler la réponse"
 
 #: src/gtk/messages_view.cpp
 msgid "Attach images or files"
 msgstr "Joindre des images ou des fichiers"
+
+#: src/gtk/messages_view.cpp
+#, fuzzy
+msgid "Send a GIF"
+msgstr "Envoyer un fichier"
 
 #: src/gtk/messages_view.cpp
 msgid "Emoji (Ctrl+.)"
@@ -2707,7 +2802,10 @@ msgid "Retry"
 msgstr "Réessayer"
 
 #: src/gtk/messages_view.cpp
-msgid "Sent as catbox.moe links: anyone with a link can open the file."
+#, fuzzy
+msgid ""
+"Uploaded to a public host (catbox.moe, or 0x0.st if that is blocked) and "
+"sent as a link: anyone with the link can open the file."
 msgstr ""
 "Envoyé sous forme de lien catbox.moe : toute personne disposant du lien peut "
 "ouvrir le fichier."
@@ -2746,6 +2844,16 @@ msgid "No desktop popups for messages or iPhone apps. Calls still ring."
 msgstr ""
 "Aucune fenêtre de notification pour les messages ou les apps de l’iPhone. "
 "Les appels sonnent toujours."
+
+#: src/gtk/notifications_view.cpp
+#, fuzzy
+msgid "Message notifications"
+msgstr "messages, notifications"
+
+#: src/gtk/notifications_view.cpp
+msgid ""
+"A popup for each new text. The unread count on the app icon stays either way."
+msgstr ""
 
 #: src/gtk/settings_view.cpp
 msgid ""
@@ -2945,6 +3053,12 @@ msgstr "Appairez des appareils et synchronisez le presse-papiers sur le réseau"
 msgid "iPhone;iOS;SMS;Messages;Clipboard;Files;Notifications;Calls;AirPods;"
 msgstr ""
 "iPhone;iOS;SMS;Messages;Presse-papiers;Fichiers;Notifications;Appels;AirPods;"
+
+#~ msgid "Reaction sent"
+#~ msgstr "Réaction envoyée"
+
+#~ msgid "The reaction was not sent."
+#~ msgstr "La réaction n’a pas été envoyée."
 
 #~ msgid "Audio here"
 #~ msgstr "Prendre l'audio ici"
